@@ -30,6 +30,7 @@
 //#include "display.h"
 #include "tile_img.h"
 #include "matched_template.h"
+#include "test_functions.h"
 
 #include "html_tags.h"
 
@@ -64,7 +65,6 @@ int main(int argc, char** argv)
     uint64_t x = 0;
     uint64_t y = 0;
     uint32_t tile_x, tile_y;
-    uint32_t tile_w, tile_h;
     uint32_t tile_index = 0;
 
     uint64_t cell_w, cell_h;
@@ -272,6 +272,17 @@ int main(int argc, char** argv)
     // Write heading
     Html_top_heading top_heading;
     out_file << top_heading;
+
+    //----------------------------------------------------------------------------
+    // start here!!!!!!
+    std::vector<cv::Rect> report_grid;
+    int32_t tile_w = 2000;
+    int32_t tile_h = 2000;
+    int32_t max_cell_width = 7 * min_cell_w;     // <-- this needs to be calculated based on the largest cell in cell_list
+    int32_t max_cell_height = min_cell_h;     // <-- this needs to be calculated based on the largest cell in cell_list
+
+    // only need to call this once and feed to the Html_img report piece
+    report_grid_generation(img_w, img_h, tile_w, tile_h, max_cell_width, max_cell_height, report_grid);
 
     //******************* IMAGE PART
     //Html_img img_whole(cell_list, detects, tiles, whole, current_tile_image, html_img_dir, templ_img_dir, def_conversion_info, matched_templates);
