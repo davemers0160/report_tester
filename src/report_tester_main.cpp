@@ -78,6 +78,7 @@ int main(int argc, char** argv)
     compression_params.push_back(cv::IMWRITE_PNG_COMPRESSION);
     compression_params.push_back(8);
 
+    cv::Mat tmp_img;
 
     //if (argc < 2)
     //{
@@ -89,25 +90,37 @@ int main(int argc, char** argv)
     //----------------------------------------------------------------------------
     // random image generation piece
     std::string cv_window = "Image";
-    cv::namedWindow(cv_window, cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
     int bp = 0;
     
-    cv::RNG rng;
-    cv::Mat current_tile_image = cv::Mat(img_h, img_w, CV_8UC3);
+    cv::RNG rng(1234567890);
+    cv::Mat current_tile_image = cv::Mat(img_h, img_w, CV_8UC1);
     rng.fill(current_tile_image, cv::RNG::UNIFORM, 0, 255);
+    cv::cvtColor(current_tile_image, current_tile_image, cv::COLOR_GRAY2BGR);
+
+    //----------------------------------------------------------------------------
+    // setup cell parameters
+    uint32_t min_cell_w = 30;
+    uint32_t min_cell_h = 30;
+
+    uint32_t cell1_w = 4* min_cell_w;
+    uint32_t cell1_h = min_cell_h;
+    uint32_t cell2_w = 2* min_cell_w;
+    uint32_t cell2_h = min_cell_h;
+
+    double pixel_size_x = 20.0; // from PixelSize nm/pixel in.txt (resolution)
+    double pixel_size_y = 20.0;
 
     //----------------------------------------------------------------------------
     // random matched template generation piece
-    uint32_t mt1_w = 100;
-    uint32_t mt1_h = 30;
-    uint32_t mt2_w = 60;
-    uint32_t mt2_h = 30;
 
-    cv::Mat mt1 = cv::Mat(mt1_h, mt1_w, CV_8UC1);
-    rng.fill(mt1, cv::RNG::UNIFORM, 0, 255);
 
-    cv::Mat mt2 = cv::Mat(mt2_h, mt2_w, CV_8UC1);
-    rng.fill(mt2, cv::RNG::UNIFORM, 0, 255);
+    cv::Mat mt1 = cv::Mat(cell1_h, cell1_w, CV_8UC1);
+    rng.fill(mt1, cv::RNG::UNIFORM, 0, 2);
+    //cv::cvtColor(mt1, mt1, cv::COLOR_GRAY2BGR);
+
+    cv::Mat mt2 = cv::Mat(cell2_h, cell2_w, CV_8UC1);
+    rng.fill(mt2, cv::RNG::UNIFORM, 0, 2);
+    //cv::cvtColor(mt2, mt2, cv::COLOR_GRAY2BGR);
 
     std::vector<matched_template> matched_templates;
 
@@ -125,39 +138,115 @@ int main(int argc, char** argv)
     matched_templates[1].imgs.push_back(mt2);
     matched_templates[1].imgs.push_back(mt2);
 
-
     //----------------------------------------------------------------------------
     // random cell location generation piece
     std::vector<Pt_info> ct1_pts;
     std::vector<Pt_info> ct2_pts;
 
-    uint32_t num_cells1 = 1000;
-    uint32_t num_cells2 = 600;
+    uint32_t buffer_w = 60;
+    uint32_t buffer_h = 30;
 
-     
+    uint32_t num_rows = floor((img_h - (2 * buffer_h)) / (double)min_cell_h);
+    uint32_t num_cols = floor((img_w - (2 * buffer_w)) / (double)min_cell_w);
 
+    uint32_t col_idx, row_idx;
+    // rows
+    for (idx = 0; idx < num_rows; ++idx)
+    {
+        row_idx = (idx * min_cell_h) + buffer_h;
+        col_idx = buffer_w;
+
+        while (col_idx < (img_w - buffer_w))
+        {
+            // randomly select one of the cells to put in into the list
+            uint32_t cell_t = rng.uniform(0, 3);
+            int32_t status = rng.uniform(0, 3);
+
+            switch (cell_t)
+            {
+            case 0:
+                ct1_pts.push_back(Pt_info(0, cv::Point(col_idx, row_idx), status));
+                ct1_pts[ct1_pts.size()-1].on_tile = 0;
+                ct1_pts[ct1_pts.size() - 1].defpt = cv::Point(col_idx* pixel_size_x, row_idx* pixel_size_y);
+                col_idx += cell1_w;
+                break;
+            case 1:
+                ct2_pts.push_back(Pt_info(0, cv::Point(col_idx, row_idx), status));
+                ct2_pts[ct2_pts.size() - 1].on_tile = 0;
+                ct2_pts[ct2_pts.size() - 1].defpt = cv::Point(col_idx * pixel_size_x, row_idx * pixel_size_y);
+                col_idx += cell2_w;
+                break;
+            default:
+                col_idx += min_cell_w*rng.uniform(0, 5);
+                break;
+            }
+        }
+    }
+
+    // draw the locations of each of the cells for verification
+    tmp_img = current_tile_image.clone();
+
+    for (idx = 0; idx < ct1_pts.size(); ++idx)
+    {
+        cv::rectangle(tmp_img, cv::Rect(ct1_pts[idx].pt, cv::Size(cell1_w, cell1_h)), cv::Scalar(255, 0, 0), 2, 8);
+    }
+
+    for (idx = 0; idx < ct2_pts.size(); ++idx)
+    {
+        cv::rectangle(tmp_img, cv::Rect(ct2_pts[idx].pt, cv::Size(cell2_w, cell2_h)), cv::Scalar(0, 255, 0), 2, 8);
+    }
+
+    // view the results of the random selection
+    cv::namedWindow(cv_window, cv::WINDOW_GUI_EXPANDED | cv::WINDOW_KEEPRATIO);
+    cv::imshow(cv_window, tmp_img);
+    cv::waitKey(0);
+
+    //----------------------------------------------------------------------------
+    // create the cell lists
+    std::vector<Cell_info> cell_list;
+    cell_list.push_back(Cell_info("cell_type_1", cell1_h, cell1_w, { 0,1,2,3 }, ct1_pts));
+    cell_list.push_back(Cell_info("cell_type_2", cell2_h, cell2_w, { 0,1,2,3 }, ct2_pts));
+
+    cell_list[0].selected = true;
+    cell_list[0].height_nm = cell1_h * pixel_size_y;
+    cell_list[0].width_nm = cell1_w * pixel_size_x;
+
+    cell_list[1].selected = true;
+    cell_list[1].height_nm = cell2_h * pixel_size_y;
+    cell_list[1].width_nm = cell2_w * pixel_size_x;
 
     //----------------------------------------------------------------------------
     std::vector<Tile_img> tiles;
-    bool whole = false;
+    bool whole = true;
 
-
-    //----------------------------------------------------------------------------
-    std::vector<Cell_info> cell_list;
-    cell_list.push_back(Cell_info("cell_type_1", mt1_h, mt1_w, { 0,1,2,3 }, ct1_pts));
-    cell_list.push_back(Cell_info("cell_type_2", mt2_h, mt2_w, { 0,1,2,3 }, ct2_pts));
-
+    tiles.push_back(Tile_img(0, 0, img_h, img_w));
+    tiles[0].aligned = true;
+    tiles[0].binarized = true;
+    tiles[0].pixel_size_x = pixel_size_x;
+    tiles[0].pixel_size_y = pixel_size_y;
 
     //----------------------------------------------------------------------------
     // detects
-    std::vector<std::vector<Pt_info>> detects;
+    std::vector<std::vector<Pt_info>> detects(2);
 
+    for (idx = 0; idx < ct1_pts.size(); ++idx)
+    {
+        if (ct1_pts[idx].matched == 0)
+            detects[0].push_back(Pt_info(0, ct1_pts[idx].pt, -1));
+    }
+
+    for (idx = 0; idx < ct2_pts.size(); ++idx)
+    {
+        if (ct2_pts[idx].matched == 0)
+            detects[1].push_back(Pt_info(0, ct2_pts[idx].pt, -1));
+    }
 
 
     //----------------------------------------------------------------------------
     // conversion info
     Pixel_to_DEF_conversion def_conversion_info;
-
+    cv::Mat tmp_tr = (cv::Mat_<double>(3, 3) << 1, 0, img_w>>1, 0, 1, img_h>>1, 0, 0, 1);
+    def_conversion_info.transf_matrices.push_back(tmp_tr);  // cv::Mat::eye(3,3,CV_64FC1)
 
 
     //----------------------------------------------------------------------------
@@ -170,6 +259,8 @@ int main(int argc, char** argv)
     std::string templ_img_dir = report_dir + "/template_images";
     std::string h_html_dir = "html_images";
     std::string h_templ_dir = "template_images";
+
+    std::filesystem::create_directory(report_dir);
     std::filesystem::create_directory(html_img_dir);
     std::filesystem::create_directory(templ_img_dir);
 
