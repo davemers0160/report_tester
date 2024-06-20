@@ -284,6 +284,26 @@ int main(int argc, char** argv)
     // only need to call this once and feed to the Html_img report piece
     report_grid_generation(img_w, img_h, tile_w, tile_h, max_cell_width, max_cell_height, report_grid);
 
+    // temp code just to view the tile layout
+    tmp_img = current_tile_image.clone();
+
+    for (idx = 0; idx < report_grid.size(); ++idx)
+    {
+        cv::rectangle(tmp_img, report_grid[idx], cv::Scalar(10*rng.uniform(10,25), 10 * rng.uniform(10, 25), 10 * rng.uniform(10, 25)), 2, 8);
+    }
+
+    // view the results of the random selection
+    cv::namedWindow(cv_window, cv::WINDOW_GUI_EXPANDED | cv::WINDOW_KEEPRATIO);
+    cv::imshow(cv_window, tmp_img);
+    cv::waitKey(0);
+
+    // here's how to crop an image using the report grid rect
+    cv::Mat cropped_img = current_tile_image(report_grid[0]).clone();
+
+    cv::namedWindow("cropped_image", cv::WINDOW_GUI_EXPANDED | cv::WINDOW_KEEPRATIO);
+    cv::imshow("cropped_image", cropped_img);
+    cv::waitKey(0);
+
     //******************* IMAGE PART
     //Html_img img_whole(cell_list, detects, tiles, whole, current_tile_image, html_img_dir, templ_img_dir, def_conversion_info, matched_templates);
     Html_img img_whole(cell_list, detects, tiles, whole, current_tile_image, html_img_dir, h_html_dir, h_templ_dir, def_conversion_info, matched_templates);
