@@ -372,16 +372,16 @@ void Html_table::get_table_rows(const std::vector<Cell_info> &cells, const std::
 				{
 					if (cells[i].selected)
 					{
-						if ((cells[i].pt_locations[kdx].on_tile == jdx) & (cells[i].pt_locations[kdx].matched == 1))
+						if ((cells[i].pt_locations[kdx].on_tile == jdx) && (cells[i].pt_locations[kdx].matched == 1))
 						{
 							count_matched++;
 							total_matched++;
 						}
-						else if ((cells[i].pt_locations[kdx].on_tile == jdx) & (cells[i].pt_locations[kdx].matched == 2))
+						else if ((cells[i].pt_locations[kdx].on_tile == jdx) && (cells[i].pt_locations[kdx].matched == 2))
 						{
 							count_missed++;
 							total_missed++;
-							if ((cells[i].pt_locations[kdx].pt.x > (tiles[jdx].width - cells[i].width)) | (cells[i].pt_locations[kdx].pt.y > (tiles[jdx].height - cells[i].height)))
+							if ((cells[i].pt_locations[kdx].pt.x > (tiles[jdx].width - cells[i].width)) || (cells[i].pt_locations[kdx].pt.y > (tiles[jdx].height - cells[i].height)))
 								count_on_edge++;
 						}
 					}
@@ -434,12 +434,12 @@ void Html_table::calc_percent_area_found(const std::vector<Cell_info>& cells, co
 			{
 				for (int kdx = 0; kdx < cells[i].pt_locations.size(); ++kdx)
 				{
-					if ((cells[i].pt_locations[kdx].on_tile == jdx) & (cells[i].pt_locations[kdx].matched == 1))
+					if ((cells[i].pt_locations[kdx].on_tile == jdx) && (cells[i].pt_locations[kdx].matched == 1))
 					{
 						design_area += cell_area;
 						found_area += cell_area;
 					}
-					else if ((cells[i].pt_locations[kdx].on_tile == jdx) & (cells[i].pt_locations[kdx].matched == 2))
+					else if ((cells[i].pt_locations[kdx].on_tile == jdx) && (cells[i].pt_locations[kdx].matched == 2))
 						design_area += cell_area;
 				}
 			}
@@ -595,6 +595,10 @@ void Img_sub::write_image(int ptloc_x, int ptloc_y, int cell_width, int cell_hei
 
 	cv::Rect rect = cv::Rect(sx, sy, sub_img_width, sub_img_height);  
 	cv::Mat sub_image = imgW(rect);
+
+	//cv::namedWindow("cropped_image", cv::WINDOW_GUI_EXPANDED | cv::WINDOW_KEEPRATIO);
+	//cv::imshow("cropped_image", sub_image);
+	//cv::waitKey(0);
 
 	// Write/Save images of missed and errant cells
 	std::vector<int> cmp(2);
@@ -755,33 +759,58 @@ void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect
 			for (Pt_info ptloc : cell.pt_locations)
 			{
 				// Make sure point is still on tile - otherwise can't display it
-				if (ptloc.on_tile == i)
+				// ptloc.on_tile == i   // removed since example code puts every point on tile 0
+				if (((ptloc.pt.y > tiles[i].imgLocRowY) && (ptloc.pt.y < tiles[i].imgLocRowY + tiles[i].height)
+					&& (ptloc.pt.x > tiles[i].imgLocColX) && (ptloc.pt.x < tiles[i].imgLocColX + tiles[i].width))
+					&& ptloc.matched == 2) // missed cell
 				{
-					if ((ptloc.pt.y > tiles[i].imgLocRowY) & (ptloc.pt.y < tiles[i].imgLocRowY + tiles[i].height))
-					{
-						if ((ptloc.pt.x > tiles[i].imgLocColX) & (ptloc.pt.x < tiles[i].imgLocColX + tiles[i].width))
-						{
-							if (ptloc.matched == 2) // misssed cell
-							{
-								// Make sub_img here and push to vector "missed"
-								Img_sub tmp_sub(ptloc, cell.name, "m", html_img_dir, h_img_dir);
-								// Create image on html
-								// LIMIT, only write image if it's not passed limit
-								if (limit_images)
-								{
-									if (num_images_created < IMAGE_LIMIT)
-										tmp_sub.write_image(ptloc.pt.x, ptloc.pt.y, cell.width, cell.height, img, tmp_sub.img_file_name, tiles[i].imgLocColX, tiles[i].imgLocRowY, "m", large_cell_width);
-								}
-								else
-									tmp_sub.write_image(ptloc.pt.x, ptloc.pt.y, cell.width, cell.height, img, tmp_sub.img_file_name, tiles[i].imgLocColX, tiles[i].imgLocRowY, "m", large_cell_width);
-								num_images_created++;
-								missed.push_back(tmp_sub);
-							}
-							
-						}
-					}
+					// Make sub_img here and push to vector "missed"
+					Img_sub tmp_sub(ptloc, cell.name, "m", html_img_dir, h_img_dir);
+					// Create image on html
+					// LIMIT, only write image if it's not past limit
+					// if (limit_images && num_images_created < IMAGE_LIMIT)
+					std::int32_t sub_img_width;
+					std::int32_t sub_img_height;
+					// Draw rectangle on image (blue missed, red errant)
+					cv::Point display_pt = cv::Point(ptloc.pt.x - tiles[i].imgLocColX, ptloc.pt.y - tiles[i].imgLocRowY);
+					cv::Rect roi(display_pt.x, display_pt.y, (int)cell.width, (int)cell.height);
+					cv::rectangle(img, roi, cv::Scalar{ 200, 0, 0 }, 4);
+
+					// Define rectangle for subsection image
+					sub_img_width = 4 * large_cell_width; // 4 * cell_width;
+					sub_img_height = 4 * cell.height;
+					cv::Size sz = img.size();
+					int img_width = sz.width;
+					int img_height = sz.height;
+					// Find center of cell and subtract to get start of image
+					cv::Point cell_center;
+					cell_center.x = ptloc.pt.x - tiles[i].imgLocColX + (int)floor(cell.width / 2);
+					cell_center.y = ptloc.pt.y - tiles[i].imgLocRowY + (int)floor(cell.height / 2);
+					int sx = cell_center.x - (int)floor(sub_img_width / 2);
+					int sy = cell_center.y - (int)floor(sub_img_height / 2);
+					// Test for left edge/top of img
+					sx = std::max(1, sx);
+					sy = std::max(1, sy);
+
+					// Test for right edge/bottom of img
+					if (img_width - sx < sub_img_width)
+						sx = img_width - sub_img_width;
+					if (img_height - sy < sub_img_height)
+						sy = img_height - sub_img_height;
+
+					//cv::Rect rect = cv::Rect(sx, sy, sub_img_width, sub_img_height);
+					//cv::Mat sub_image = img(rect);
+					//tmp_sub.write_image(ptloc.pt.x, ptloc.pt.y, cell.width, cell.height, img, tmp_sub.img_file_name, tiles[i].imgLocColX, tiles[i].imgLocRowY, "m", large_cell_width);
+
+					num_images_created++;
+					missed.push_back(tmp_sub);
 				}
 			}
+
+			// debug to show each tile
+			cv::namedWindow("cropped_image", cv::WINDOW_GUI_EXPANDED | cv::WINDOW_KEEPRATIO);
+			cv::imshow("cropped_image", img);
+			cv::waitKey(0);
 
 			// ISSUES FOR ERRANT CELLS - WHAT TILE DO THEY FALL ON? 
 			// The cell type passed in is the same as the detect cell type passed in
@@ -790,9 +819,9 @@ void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect
 			{
 				if (cell_detect[d].matched == -1)
 				{
-					if ((cell_detect[d].pt.x > tiles[i].imgLocColX) & (cell_detect[d].pt.x < tiles[i].imgLocColX + tiles[i].width))
+					if ((cell_detect[d].pt.x > tiles[i].imgLocColX) && (cell_detect[d].pt.x < tiles[i].imgLocColX + tiles[i].width))
 					{
-						if ((cell_detect[d].pt.y > tiles[i].imgLocRowY) & (cell_detect[d].pt.y < tiles[i].imgLocRowY + tiles[i].height))
+						if ((cell_detect[d].pt.y > tiles[i].imgLocRowY) && (cell_detect[d].pt.y < tiles[i].imgLocRowY + tiles[i].height))
 						{
 							Img_sub tmp_sub2(cell_detect[d], cell.name, "e", html_img_dir, h_img_dir);
 							if (limit_images)
@@ -972,7 +1001,7 @@ std::ostream& operator << (std::ostream& out, Html_img img_tmp)
 			// Add NEW template images
 			write_template_table(out, img_tmp.sections[i].templ_filename);
 			out << "<h4>" << "Binary Cell Templates:  Orientations N, FN, S, FS" << "</h4>" << std::endl;
-			if (img_tmp.sections[i].missed.empty() & img_tmp.sections[i].errant.empty())
+			if (img_tmp.sections[i].missed.empty() && img_tmp.sections[i].errant.empty())
 				out << "<h4>" << "Note:  No missed or errant cells." << "</h4>" << std::endl;
 			// end template image
 
