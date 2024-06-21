@@ -539,9 +539,9 @@ public:
 	cv::Point def_coords; //x,y
 	std::string img_file_name;
 	std::string himg_filename;
-	std::int32_t sub_img_width;
-	std::int32_t sub_img_height;
-	std::int32_t html_img_width;
+	std::int32_t sub_img_width = 0;
+	std::int32_t sub_img_height = 0;
+	std::int32_t html_img_width = 0;
 	std::int32_t html_img_height = 150;
 
 	Img_sub(Pt_info ptloc, std::string cell_name, std::string type, std::string html_img_dir, std::string h_img_dir); // type is "m" or "e"
@@ -747,6 +747,7 @@ void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect
 
 	// loop through the tiles
 	for (Tile_img tile : tiles) {
+		bool empty = true;
 		if (tile.aligned)
 		{
 			// Read in image for tiles[i]
@@ -764,61 +765,54 @@ void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect
 					&& (ptloc.pt.x > tile.imgLocColX) && (ptloc.pt.x < tile.imgLocColX + tile.width))
 					&& ptloc.matched == 2) // missed cell
 				{
+					empty = false;
 					// Make sub_img here and push to vector "missed"
 					Img_sub tmp_sub(ptloc, cell.name, "m", html_img_dir, h_img_dir);
 					// Create image on html
-					// LIMIT, only write image if it's not past limit
-					// if (limit_images && num_images_created < IMAGE_LIMIT)
-					//std::int32_t sub_img_width;
-					//std::int32_t sub_img_height;
 					// Draw rectangle on image (blue missed, red errant)
 					cv::Point display_pt = cv::Point(ptloc.pt.x, ptloc.pt.y);
 					cv::Rect roi(display_pt.x, display_pt.y, (int)cell.width, (int)cell.height);
 					cv::rectangle(img, roi, cv::Scalar{ 200, 0, 0 }, 4);
 
-					/* commented out for debugging performance
-					* likely remove in the future, since each sub image is no longer needed
-					// Define rectangle for subsection image
-					sub_img_width = 4 * large_cell_width; // 4 * cell_width;
-					sub_img_height = 4 * cell.height;
-					cv::Size sz = img.size();
-					int img_width = sz.width;
-					int img_height = sz.height;
-					// Find center of cell and subtract to get start of image
-					cv::Point cell_center;
-					cell_center.x = ptloc.pt.x - tile.imgLocColX + (int)floor(cell.width / 2);
-					cell_center.y = ptloc.pt.y - tile.imgLocRowY + (int)floor(cell.height / 2);
-					int sx = cell_center.x - (int)floor(sub_img_width / 2);
-					int sy = cell_center.y - (int)floor(sub_img_height / 2);
-					// Test for left edge/top of img
-					sx = std::max(1, sx);
-					sy = std::max(1, sy);
-
-					// Test for right edge/bottom of img
-					if (img_width - sx < sub_img_width)
-						sx = img_width - sub_img_width;
-					if (img_height - sy < sub_img_height)
-						sy = img_height - sub_img_height;
-
-					cv::Rect rect = cv::Rect(sx, sy, sub_img_width, sub_img_height);
-					cv::Mat sub_image = img(rect);
-					tmp_sub.write_image(ptloc.pt.x, ptloc.pt.y, cell.width, cell.height, img, tmp_sub.img_file_name, tile.imgLocColX, tile.imgLocRowY, "m", large_cell_width);
-					num_images_created++;
+					// this will need to be changed to the whole tile, not each cell
+					// for tracking display in HTML report
 					missed.push_back(tmp_sub);
-					*/
 				}
 			}
 
-			// debug to show each tile, should write to disk in production
-			cv::Rect tile_rect(tile.imgLocColX, tile.imgLocRowY, tile.width + large_cell_width, tile.height + large_cell_height);
-			cv::Mat tile_image = img(tile_rect);
-			cv::namedWindow("cropped_image", cv::WINDOW_GUI_EXPANDED | cv::WINDOW_KEEPRATIO);
-			cv::imshow("cropped_image", tile_image);
-			cv::waitKey(0);
+			if (!empty)
+			{
+				// ensure cells are not cut off by crop
+				std::uint32_t buffer_width = tile.width + large_cell_width;
+				std::uint32_t buffer_height = tile.height + large_cell_height;
+
+				// check whether tile is on edge
+				if (buffer_width + tile.imgLocColX > img.cols)
+					buffer_width = tile.width;
+				if (buffer_height + tile.imgLocRowY > img.rows)
+					buffer_height = tile.height;
+
+				// crop image to tile + buffer
+				cv::Rect tile_rect(tile.imgLocColX, tile.imgLocRowY, buffer_width, buffer_height);
+				cv::Mat tile_image = img(tile_rect);
+
+				std::vector<int> cmp(2);
+				cmp[0] = cv::IMWRITE_PNG_COMPRESSION;
+				cmp[1] = 4; // compression factor - use values of 0 to 9 - default is 1
+
+				// Reduce the number of rows and cols
+				cv::Mat resized_img;
+				double reduction = 0.50;
+				cv::resize(tile_image, resized_img, cv::Size(tile_image.cols * reduction, tile_image.rows * reduction), 0, 0, cv::INTER_LINEAR);
+
+				// write image to disk
+				std::string img_filename = html_img_dir + "/" + cell_name + "_" + std::to_string(tile.imgLocColX) + "_" + std::to_string(tile.imgLocRowY) + "_" + "m" + ".png";
+				cv::imwrite(img_filename, resized_img, cmp);
+			}
 
 			// ISSUES FOR ERRANT CELLS - WHAT TILE DO THEY FALL ON? 
 			// The cell type passed in is the same as the detect cell type passed in
-
+			// take lessons from missed cell logic and implement similar
 			for (int d = 0; d < cell_detect.size(); d++)
 			{
 				if (cell_detect[d].matched == -1)
