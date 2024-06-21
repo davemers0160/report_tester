@@ -302,16 +302,21 @@ int main(int argc, char** argv)
     }
 
     // view the results of the random selection
-    cv::namedWindow(cv_window, cv::WINDOW_GUI_EXPANDED | cv::WINDOW_KEEPRATIO);
-    cv::imshow(cv_window, tmp_img);
-    cv::waitKey(0);
+    /*
+        cv::namedWindow(cv_window, cv::WINDOW_GUI_EXPANDED | cv::WINDOW_KEEPRATIO);
+        cv::imshow(cv_window, tmp_img);
+        cv::waitKey(0);
+    */
 
     // here's how to crop an image using the report grid rect
+    /*
     cv::Mat cropped_img = current_tile_image(report_grid[0]).clone();
 
     cv::namedWindow("cropped_image", cv::WINDOW_GUI_EXPANDED | cv::WINDOW_KEEPRATIO);
     cv::imshow("cropped_image", cropped_img);
     cv::waitKey(0);
+
+    */
 
     //******************* IMAGE PART
     //Html_img img_whole(cell_list, detects, tiles, whole, current_tile_image, html_img_dir, templ_img_dir, def_conversion_info, matched_templates);

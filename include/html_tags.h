@@ -570,51 +570,52 @@ void Img_sub::write_image(int ptloc_x, int ptloc_y, int cell_width, int cell_hei
 		cv::rectangle(imgW, roi, cv::Scalar{200, 0, 0}, 4);
 	else if (type == "e")
 		cv::rectangle(imgW, roi, cv::Scalar{0, 0, 200}, 4);
+		// Define rectangle for subsection image
+		sub_img_width = 4 * large_cell_width; // 4 * cell_width;
+		sub_img_height = 4 * cell_height;
+		//if ((ptloc_x + sub_img_width < tilex) && (ptloc_y + sub_img_height < tiley)) {
+		cv::Size sz = imgW.size();
+		int img_width = sz.width;
+		int img_height = sz.height;
+		// Find center of cell and subtract to get start of image
+		cv::Point cell_center;
+		cell_center.x = ptloc_x - tilex + (int)floor(cell_width / 2);
+		cell_center.y = ptloc_y - tiley + (int)floor(cell_height / 2);
+		int sx = cell_center.x - (int)floor(sub_img_width / 2);
+		int sy = cell_center.y - (int)floor(sub_img_height / 2);
+		// Test for left edge/top of img
+		sx = std::max(1, sx);
+		sy = std::max(1, sy);
 
-	// Define rectangle for subsection image
-	sub_img_width = 4*large_cell_width; // 4 * cell_width;
-	sub_img_height = 4*cell_height;
-	cv::Size sz = imgW.size();
-	int img_width = sz.width;
-	int img_height = sz.height;
-	// Find center of cell and subtract to get start of image
-	cv::Point cell_center; 
-	cell_center.x = ptloc_x - tilex + (int)floor(cell_width / 2);
-	cell_center.y = ptloc_y - tiley + (int)floor(cell_height / 2);
-	int sx = cell_center.x - (int)floor(sub_img_width / 2);
-	int sy = cell_center.y - (int)floor(sub_img_height / 2);
-	// Test for left edge/top of img
-	sx = std::max(1, sx);
-	sy = std::max(1, sy);
-	
-	// Test for right edge/bottom of img
-	if (img_width - sx < sub_img_width)
-		sx = img_width - sub_img_width;
-	if (img_height - sy < sub_img_height)
-		sy = img_height - sub_img_height;
+		// Test for right edge/bottom of img
+		if (img_width - sx < sub_img_width)
+			sx = img_width - sub_img_width;
+		if (img_height - sy < sub_img_height)
+			sy = img_height - sub_img_height;
 
-	cv::Rect rect = cv::Rect(sx, sy, sub_img_width, sub_img_height);  
-	cv::Mat sub_image = imgW(rect);
+		cv::Rect rect = cv::Rect(sx, sy, sub_img_width, sub_img_height);
+		cv::Mat sub_image = imgW(rect);
 
-	//cv::namedWindow("cropped_image", cv::WINDOW_GUI_EXPANDED | cv::WINDOW_KEEPRATIO);
-	//cv::imshow("cropped_image", sub_image);
-	//cv::waitKey(0);
+		//cv::namedWindow("cropped_image", cv::WINDOW_GUI_EXPANDED | cv::WINDOW_KEEPRATIO);
+		//cv::imshow("cropped_image", sub_image);
+		//cv::waitKey(0);
 
-	// Write/Save images of missed and errant cells
-	std::vector<int> cmp(2);
-	cmp[0] = cv::IMWRITE_PNG_COMPRESSION;
-	cmp[1] = 4; // compression factor - use values of 0 to 9 - default is 1
+		// Write/Save images of missed and errant cells
+		std::vector<int> cmp(2);
+		cmp[0] = cv::IMWRITE_PNG_COMPRESSION;
+		cmp[1] = 4; // compression factor - use values of 0 to 9 - default is 1
 
-	// Reduce the number of rows and cols
-	cv::Mat resized_img;
-	double reduction = 0.50;
-	cv::resize(sub_image, resized_img, cv::Size(sub_image.cols * reduction, sub_image.rows * reduction), 0, 0, cv::INTER_LINEAR);
+		// Reduce the number of rows and cols
+		cv::Mat resized_img;
+		double reduction = 0.50;
+		cv::resize(sub_image, resized_img, cv::Size(sub_image.cols * reduction, sub_image.rows * reduction), 0, 0, cv::INTER_LINEAR);
 
-	cv::imwrite(sub_img_filename, resized_img, cmp);
+		cv::imwrite(sub_img_filename, resized_img, cmp);
 
-	// Find width for html
-	html_img_width = (int32_t)floor((double)sub_img_width * ((double)html_img_height/ (double)sub_img_height));
-}
+		// Find width for html
+		html_img_width = (int32_t)floor((double)sub_img_width * ((double)html_img_height / (double)sub_img_height));
+	}
+//}
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -745,23 +746,22 @@ void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect
 	create_template_header(cell, cell_template_img, orientation);
 
 	// loop through the tiles
-	for (int i = 0; i < tiles.size(); i++)
-	{
-		if (tiles[i].aligned)
+	for (Tile_img tile : tiles) {
+		if (tile.aligned)
 		{
 			// Read in image for tiles[i]
 			cv::Mat img;
 			if (whole_img)
 				img = current_tile_image.clone();
 			else
-				img = cv::imread(tiles[i].image_file);
-			
+				img = cv::imread(tile.image_file);
+
 			for (Pt_info ptloc : cell.pt_locations)
 			{
 				// Make sure point is still on tile - otherwise can't display it
 				// ptloc.on_tile == i   // removed since example code puts every point on tile 0
-				if (((ptloc.pt.y > tiles[i].imgLocRowY) && (ptloc.pt.y < tiles[i].imgLocRowY + tiles[i].height)
-					&& (ptloc.pt.x > tiles[i].imgLocColX) && (ptloc.pt.x < tiles[i].imgLocColX + tiles[i].width))
+				if (((ptloc.pt.y > tile.imgLocRowY) && (ptloc.pt.y < tile.imgLocRowY + tile.height)
+					&& (ptloc.pt.x > tile.imgLocColX) && (ptloc.pt.x < tile.imgLocColX + tile.width))
 					&& ptloc.matched == 2) // missed cell
 				{
 					// Make sub_img here and push to vector "missed"
@@ -772,7 +772,7 @@ void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect
 					std::int32_t sub_img_width;
 					std::int32_t sub_img_height;
 					// Draw rectangle on image (blue missed, red errant)
-					cv::Point display_pt = cv::Point(ptloc.pt.x - tiles[i].imgLocColX, ptloc.pt.y - tiles[i].imgLocRowY);
+					cv::Point display_pt = cv::Point(ptloc.pt.x - tile.imgLocColX, ptloc.pt.y - tile.imgLocRowY);
 					cv::Rect roi(display_pt.x, display_pt.y, (int)cell.width, (int)cell.height);
 					cv::rectangle(img, roi, cv::Scalar{ 200, 0, 0 }, 4);
 
@@ -784,8 +784,8 @@ void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect
 					int img_height = sz.height;
 					// Find center of cell and subtract to get start of image
 					cv::Point cell_center;
-					cell_center.x = ptloc.pt.x - tiles[i].imgLocColX + (int)floor(cell.width / 2);
-					cell_center.y = ptloc.pt.y - tiles[i].imgLocRowY + (int)floor(cell.height / 2);
+					cell_center.x = ptloc.pt.x - tile.imgLocColX + (int)floor(cell.width / 2);
+					cell_center.y = ptloc.pt.y - tile.imgLocRowY + (int)floor(cell.height / 2);
 					int sx = cell_center.x - (int)floor(sub_img_width / 2);
 					int sy = cell_center.y - (int)floor(sub_img_height / 2);
 					// Test for left edge/top of img
@@ -798,10 +798,9 @@ void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect
 					if (img_height - sy < sub_img_height)
 						sy = img_height - sub_img_height;
 
-					//cv::Rect rect = cv::Rect(sx, sy, sub_img_width, sub_img_height);
-					//cv::Mat sub_image = img(rect);
-					//tmp_sub.write_image(ptloc.pt.x, ptloc.pt.y, cell.width, cell.height, img, tmp_sub.img_file_name, tiles[i].imgLocColX, tiles[i].imgLocRowY, "m", large_cell_width);
-
+					cv::Rect rect = cv::Rect(sx, sy, sub_img_width, sub_img_height);
+					cv::Mat sub_image = img(rect);
+					tmp_sub.write_image(ptloc.pt.x, ptloc.pt.y, cell.width, cell.height, img, tmp_sub.img_file_name, tile.imgLocColX, tile.imgLocRowY, "m", large_cell_width);
 					num_images_created++;
 					missed.push_back(tmp_sub);
 				}
@@ -814,36 +813,36 @@ void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect
 
 			// ISSUES FOR ERRANT CELLS - WHAT TILE DO THEY FALL ON? 
 			// The cell type passed in is the same as the detect cell type passed in
-			
+
 			for (int d = 0; d < cell_detect.size(); d++)
 			{
 				if (cell_detect[d].matched == -1)
 				{
-					if ((cell_detect[d].pt.x > tiles[i].imgLocColX) && (cell_detect[d].pt.x < tiles[i].imgLocColX + tiles[i].width))
+					if ((cell_detect[d].pt.x > tile.imgLocColX) && (cell_detect[d].pt.x < tile.imgLocColX + tile.width))
 					{
-						if ((cell_detect[d].pt.y > tiles[i].imgLocRowY) && (cell_detect[d].pt.y < tiles[i].imgLocRowY + tiles[i].height))
+						if ((cell_detect[d].pt.y > tile.imgLocRowY) && (cell_detect[d].pt.y < tile.imgLocRowY + tile.height))
 						{
 							Img_sub tmp_sub2(cell_detect[d], cell.name, "e", html_img_dir, h_img_dir);
 							if (limit_images)
 							{
 								if (num_images_created_e < IMAGE_LIMIT)
-									tmp_sub2.write_image(cell_detect[d].pt.x, cell_detect[d].pt.y, cell.width, cell.height, img, tmp_sub2.img_file_name, tiles[i].imgLocColX, tiles[i].imgLocRowY, "e", large_cell_width);
+									tmp_sub2.write_image(cell_detect[d].pt.x, cell_detect[d].pt.y, cell.width, cell.height, img, tmp_sub2.img_file_name, tile.imgLocColX, tile.imgLocRowY, "e", large_cell_width);
 							}
 							else
-								tmp_sub2.write_image(cell_detect[d].pt.x, cell_detect[d].pt.y, cell.width, cell.height, img, tmp_sub2.img_file_name, tiles[i].imgLocColX, tiles[i].imgLocRowY, "e", large_cell_width);
-							
+								tmp_sub2.write_image(cell_detect[d].pt.x, cell_detect[d].pt.y, cell.width, cell.height, img, tmp_sub2.img_file_name, tile.imgLocColX, tile.imgLocRowY, "e", large_cell_width);
+
 							num_images_created_e++;
-							
+
 							// Convert coords of tmp_sub2 to DEF point
 							cv::Point pixel_pt = cv::Point(tmp_sub2.coords.x, tmp_sub2.coords.y);
-							
+
 							// DON"T KNOW THE CORRECT CELL WIDTH SINCE IT"S ERRANT SO WON"T GET EXACT DEF LOCATION
-							tmp_sub2.def_coords = convert_pixel_to_DEF_pt(convert_info, pixel_pt, cell.width, i, tiles[i].pixel_size_x, tiles[i].pixel_size_y, true);
-							
+							tmp_sub2.def_coords = convert_pixel_to_DEF_pt(convert_info, pixel_pt, cell.width, 0, tile.pixel_size_x, tile.pixel_size_y, true);
+
 							// Debug
 							//cv::Point test_pt1;
 							//test_pt1 = convert_pixel_to_DEF_pt(convert_info, cv::Point(2461, 2945), 99, i, tiles[i].pixel_size_x, tiles[i].pixel_size_y, true);
-							
+
 							errant.push_back(tmp_sub2);
 						}
 					}
@@ -853,8 +852,7 @@ void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect
 	}
 }
 
-void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect, const std::vector<Tile_img>& tiles, bool whole_img, const cv::Mat& current_tile_image, cv::Mat cell_template_img, int orientation)
-{
+void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect, const std::vector<Tile_img>& tiles, bool whole_img, const cv::Mat& current_tile_image, cv::Mat cell_template_img, int orientation) {
 	// Creates subsections inside each cell section, one for missed cells and one for errant cells
 	// Steps:  searches for tiles that are aligned
 	//         searches cell_list for cells on that tile that is aligned
