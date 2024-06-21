@@ -653,13 +653,13 @@ public:
 	std::vector<Img_sub> missed;
 	std::vector<Img_sub> errant;
 
-	Img_section(Cell_info cell, std::vector<Pt_info> cell_detect, const std::vector<Tile_img>& tiles, std::int32_t large_cell_width, bool whole_img, const cv::Mat& current_tile_image, std::string html_id, std::string h_id, std::string tmp_ld, Pixel_to_DEF_conversion convert_info, cv::Mat cell_template_img, int orientation)
+	Img_section(Cell_info cell, std::vector<Pt_info> cell_detect, const std::vector<Tile_img>& tiles, std::int32_t large_cell_width, std::int32_t large_cell_height, bool whole_img, const cv::Mat& current_tile_image, std::string html_id, std::string h_id, std::string tmp_ld, Pixel_to_DEF_conversion convert_info, cv::Mat cell_template_img, int orientation)
 		: html_img_dir(html_id), h_img_dir(h_id), templ_dir(tmp_ld)
 	{
-		setup_section(cell, cell_detect, tiles, large_cell_width, whole_img, current_tile_image, convert_info, cell_template_img, orientation);
+		setup_section(cell, cell_detect, tiles, large_cell_width, large_cell_height, whole_img, current_tile_image, convert_info, cell_template_img, orientation);
 	}
 	
-	void setup_section(Cell_info cell, std::vector<Pt_info> cell_detect, const std::vector<Tile_img>& tiles, std::int32_t large_cell_width, bool whole_img, const cv::Mat& current_tile_image, Pixel_to_DEF_conversion convert_info, cv::Mat cell_template_img, int orientation);
+	void setup_section(Cell_info cell, std::vector<Pt_info> cell_detect, const std::vector<Tile_img>& tiles, std::int32_t large_cell_width, std::int32_t large_cell_height, bool whole_img, const cv::Mat& current_tile_image, Pixel_to_DEF_conversion convert_info, cv::Mat cell_template_img, int orientation);
 
 	void setup_section(Cell_info cell, std::vector<Pt_info> cell_detect, const std::vector<Tile_img>& tiles, bool whole_img, const cv::Mat& current_tile_image, cv::Mat cell_template_img, int orientation);
 
@@ -729,7 +729,7 @@ private:
 //}
 
 
-void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect, const std::vector<Tile_img>& tiles, std::int32_t large_cell_width, bool whole_img, const cv::Mat& current_tile_image, Pixel_to_DEF_conversion convert_info, cv::Mat cell_template_img, int orientation)
+void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect, const std::vector<Tile_img>& tiles, std::int32_t large_cell_width, std::int32_t large_cell_height, bool whole_img, const cv::Mat& current_tile_image, Pixel_to_DEF_conversion convert_info, cv::Mat cell_template_img, int orientation)
 {
 	// Creates subsections inside each cell section, one for missed cells and one for errant cells
 	// Steps:  searches for tiles that are aligned
@@ -769,13 +769,15 @@ void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect
 					// Create image on html
 					// LIMIT, only write image if it's not past limit
 					// if (limit_images && num_images_created < IMAGE_LIMIT)
-					std::int32_t sub_img_width;
-					std::int32_t sub_img_height;
+					//std::int32_t sub_img_width;
+					//std::int32_t sub_img_height;
 					// Draw rectangle on image (blue missed, red errant)
-					cv::Point display_pt = cv::Point(ptloc.pt.x - tile.imgLocColX, ptloc.pt.y - tile.imgLocRowY);
+					cv::Point display_pt = cv::Point(ptloc.pt.x, ptloc.pt.y);
 					cv::Rect roi(display_pt.x, display_pt.y, (int)cell.width, (int)cell.height);
 					cv::rectangle(img, roi, cv::Scalar{ 200, 0, 0 }, 4);
 
+					/* commented out for debugging performance
+					* likely remove in the future, since each sub image is no longer needed
 					// Define rectangle for subsection image
 					sub_img_width = 4 * large_cell_width; // 4 * cell_width;
 					sub_img_height = 4 * cell.height;
@@ -803,12 +805,15 @@ void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect
 					tmp_sub.write_image(ptloc.pt.x, ptloc.pt.y, cell.width, cell.height, img, tmp_sub.img_file_name, tile.imgLocColX, tile.imgLocRowY, "m", large_cell_width);
 					num_images_created++;
 					missed.push_back(tmp_sub);
+					*/
 				}
 			}
 
-			// debug to show each tile
+			// debug to show each tile, should write to disk in production
+			cv::Rect tile_rect(tile.imgLocColX, tile.imgLocRowY, tile.width + large_cell_width, tile.height + large_cell_height);
+			cv::Mat tile_image = img(tile_rect);
 			cv::namedWindow("cropped_image", cv::WINDOW_GUI_EXPANDED | cv::WINDOW_KEEPRATIO);
-			cv::imshow("cropped_image", img);
+			cv::imshow("cropped_image", tile_image);
 			cv::waitKey(0);
 
 			// ISSUES FOR ERRANT CELLS - WHAT TILE DO THEY FALL ON? 
@@ -929,7 +934,7 @@ Html_img::Html_img(const std::vector<Cell_info> &cell_list, const std::vector<st
 			if (matched_templates[cnum].imgs.size() > 0)
 			{
 				// Creates section of images (missed and errant) by cell type (scc9gena_dfrtp_1, sccgena_mux2_2, etc)
-				Img_section tmp_sect(cell_list[cnum], detects[cnum], tiles, cell_list[0].width, whole_img, current_tile_image, html_img_dir, h_img_dir, templ_dir, convert_info, matched_templates[cnum].get_mosaic(), matched_templates[cnum].orientation);
+				Img_section tmp_sect(cell_list[cnum], detects[cnum], tiles, cell_list[0].width, cell_list[0].height, whole_img, current_tile_image, html_img_dir, h_img_dir, templ_dir, convert_info, matched_templates[cnum].get_mosaic(), matched_templates[cnum].orientation);
 				sections.push_back(tmp_sect);
 			}
 			//else
