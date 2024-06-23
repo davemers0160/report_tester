@@ -276,8 +276,8 @@ int main(int argc, char** argv)
     //----------------------------------------------------------------------------
     // start here!!!!!!
     std::vector<cv::Rect> report_grid;
-    int32_t tile_w = 2000;
-    int32_t tile_h = 2000;
+    int32_t tile_w = 1800;
+    int32_t tile_h = 1800;
     int32_t max_cell_width = 7 * min_cell_w;     // <-- this needs to be calculated based on the largest cell in cell_list
     int32_t max_cell_height = min_cell_h;     // <-- this needs to be calculated based on the largest cell in cell_list
 
@@ -289,7 +289,7 @@ int main(int argc, char** argv)
 
     for (idx = 0; idx < report_grid.size(); ++idx)
     {
-        cv::rectangle(tmp_img, report_grid[idx], cv::Scalar(10*rng.uniform(10,25), 10 * rng.uniform(10, 25), 10 * rng.uniform(10, 25)), 2, 8);
+        cv::rectangle(tmp_img, report_grid[idx], cv::Scalar(10*rng.uniform(12,26), 10 * rng.uniform(12, 26), 10 * rng.uniform(12, 26)), 4, 8);
     }
 
     // view the results of the random selection
