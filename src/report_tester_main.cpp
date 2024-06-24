@@ -156,7 +156,7 @@ int main(int argc, char** argv)
         row_idx = (idx * min_cell_h) + buffer_h;
         col_idx = buffer_w;
 
-        while (col_idx < (img_w - buffer_w))
+        while (col_idx < (img_w - (2*buffer_w)))
         {
             // randomly select one of the cells to put in into the list
             uint32_t cell_t = rng.uniform(0, 3);
