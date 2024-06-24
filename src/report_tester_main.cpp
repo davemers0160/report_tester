@@ -156,7 +156,7 @@ int main(int argc, char** argv)
         row_idx = (idx * min_cell_h) + buffer_h;
         col_idx = buffer_w;
 
-        while (col_idx < (img_w - buffer_w))
+        while (col_idx < (img_w - (2*buffer_w)))
         {
             // randomly select one of the cells to put in into the list
             uint32_t cell_t = rng.uniform(0, 3);
@@ -290,7 +290,7 @@ int main(int argc, char** argv)
 
     for (idx = 0; idx < report_grid.size(); ++idx)
     {
-        cv::rectangle(tmp_img, report_grid[idx], cv::Scalar(10*rng.uniform(10,25), 10 * rng.uniform(10, 25), 10 * rng.uniform(10, 25)), 2, 8);
+        cv::rectangle(tmp_img, report_grid[idx], cv::Scalar(10*rng.uniform(12,26), 10 * rng.uniform(12, 26), 10 * rng.uniform(12, 26)), 4, 8);
     }
 
     // convert Rects to Tile_img to pass to Html_img

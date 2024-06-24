@@ -9,7 +9,10 @@ void report_grid_generation(int64_t img_w, int64_t img_h, int32_t tile_w, int32_
 {
     int32_t idx, jdx;
 
-    int32_t xl, yl, xr, yr;
+    int32_t t_w, t_h;
+    int32_t row = 0, col = 0;
+
+    //int32_t xl, yl, xr, yr;
 
     cv::Rect r;
 
@@ -17,23 +20,25 @@ void report_grid_generation(int64_t img_w, int64_t img_h, int32_t tile_w, int32_
     grid.clear();
 
     // run through the image height and width in tile_h and tile_w increments 
-    for (idx = -cell_h; idx < img_h; idx += (tile_h))
+    row = 0;
+    while (row < img_h)
     {
-        for (jdx = -cell_w; jdx < img_w; jdx += (tile_w))
+        col = 0;
+        while (col < img_w)
         {
-            // create a +/- cell_w and cell_h buffer for the image
-            xl = std::max<int64_t>(0, jdx);
-            xr = std::min<int64_t>(img_w, xl+tile_w);
 
-            yl = std::max<int64_t>(0, idx);
-            yr = std::min<int64_t>(img_h, yl+tile_h);
+            t_w = (col + tile_w >= img_w) ? img_w - col : tile_w;
+            t_h = (row + tile_h >= img_h) ? img_h - row : tile_h;
 
-            // create the rect
-            r = cv::Rect(cv::Point(xl, yl), cv::Point(xr, yr));
+            r = cv::Rect(cv::Point(col, row), cv::Size(t_w, t_h));
 
             // push the rect back into the vector
             grid.push_back(r);
+
+            col += (tile_w - cell_w);
         }
+
+        row += (tile_h - cell_h);
     }
 
 }   // end of report_grid_generation
