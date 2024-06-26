@@ -156,7 +156,7 @@ int main(int argc, char** argv)
         row_idx = (idx * min_cell_h) + buffer_h;
         col_idx = buffer_w;
 
-        while (col_idx < (img_w - buffer_w))
+        while (col_idx < (img_w - (2*buffer_w)))
         {
             // randomly select one of the cells to put in into the list
             uint32_t cell_t = rng.uniform(0, 3);
@@ -290,7 +290,7 @@ int main(int argc, char** argv)
 
     for (idx = 0; idx < report_grid.size(); ++idx)
     {
-        cv::rectangle(tmp_img, report_grid[idx], cv::Scalar(10*rng.uniform(10,25), 10 * rng.uniform(10, 25), 10 * rng.uniform(10, 25)), 2, 8);
+        cv::rectangle(tmp_img, report_grid[idx], cv::Scalar(10*rng.uniform(12,26), 10 * rng.uniform(12, 26), 10 * rng.uniform(12, 26)), 4, 8);
     }
 
     // convert Rects to Tile_img to pass to Html_img
@@ -302,16 +302,21 @@ int main(int argc, char** argv)
     }
 
     // view the results of the random selection
-    cv::namedWindow(cv_window, cv::WINDOW_GUI_EXPANDED | cv::WINDOW_KEEPRATIO);
-    cv::imshow(cv_window, tmp_img);
-    cv::waitKey(0);
+    /*
+        cv::namedWindow(cv_window, cv::WINDOW_GUI_EXPANDED | cv::WINDOW_KEEPRATIO);
+        cv::imshow(cv_window, tmp_img);
+        cv::waitKey(0);
+    */
 
     // here's how to crop an image using the report grid rect
+    /*
     cv::Mat cropped_img = current_tile_image(report_grid[0]).clone();
 
     cv::namedWindow("cropped_image", cv::WINDOW_GUI_EXPANDED | cv::WINDOW_KEEPRATIO);
     cv::imshow("cropped_image", cropped_img);
     cv::waitKey(0);
+
+    */
 
     //******************* IMAGE PART
     //Html_img img_whole(cell_list, detects, tiles, whole, current_tile_image, html_img_dir, templ_img_dir, def_conversion_info, matched_templates);

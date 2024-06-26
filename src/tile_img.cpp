@@ -80,7 +80,7 @@ void Tile_img::find_pixel_size(const cv::Mat &img, std::string file_name, int32_
   }
   cv::destroyAllWindows();
 
-  if (!points_lr.empty() & !points_ul.empty())
+  if (!points_lr.empty() && !points_ul.empty())
   {
     cv::Point point2 = points_lr.back();
     point2.x = start_x + point2.x;
@@ -223,21 +223,21 @@ cv::Scalar Tile_img::get_color(std::string cellname)
       a = (rand() % 10) * m;
       b = (rand() % 10) * m;
       c = (rand() % 10) * m;
-      if ((a < 70) & (b < 70) & (c > 150)) // close to red color
+      if ((a < 70) && (b < 70) && (c > 150)) // close to red color
         continue;
-      if ((a < 50) & (b > 150) & (c > 150)) // close to yellow color
+      if ((a < 50) && (b > 150) && (c > 150)) // close to yellow color
         continue;
-      if ((a < 75) & (b < 75) & (c < 75)) // color too dark
+      if ((a < 75) && (b < 75) && (c < 75)) // color too dark
         continue;
-      if ((a > 225) & (b > 225) & (c > 225)) // color too white
+      if ((a > 225) && (b > 225) && (c > 225)) // color too white
         continue;
       // Test if near a color in used_colors
       used_colors_test = false;
       for (int i = 0; i < used_colors.size(); i++)
       {
-        if ((a < used_colors[i][0] + 20) & (a > used_colors[i][0] - 20) &
-          (b < used_colors[i][1] + 20) & (b > used_colors[i][1] - 20) &
-          (c < used_colors[i][2] + 20) & (c > used_colors[i][2] - 20))
+        if ((a < used_colors[i][0] + 20) && (a > used_colors[i][0] - 20) &&
+            (b < used_colors[i][1] + 20) && (b > used_colors[i][1] - 20) &&
+            (c < used_colors[i][2] + 20) && (c > used_colors[i][2] - 20))
         {
           used_colors_test = true;
           break;
