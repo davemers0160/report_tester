@@ -722,11 +722,34 @@ private:
 	}
 };
 
-//Img_section::Img_section(Cell_info cell, std::vector<Pt_info> cell_detect, const std::vector<Tile_img>& tiles, std::int32_t large_cell_width, bool whole_img, const cv::Mat& current_tile_image, std::string html_img_dir, std::string h_img_dir, std::string templ_dir, Pixel_to_DEF_conversion convert_info, cv::Mat cell_template_img, int orientation)
-//{
-//
-//
-//}
+bool write_tile(Tile_img tile, std::int32_t large_cell_width, std::int32_t large_cell_height, cv::Mat img, std::string html_img_dir, std::string cell_name, std::string cell_type) {
+	// ensure cells are not cut off by crop
+	std::uint32_t buffer_width = tile.width + large_cell_width;
+	std::uint32_t buffer_height = tile.height + large_cell_height;
+
+	// check whether tile is on edge
+	if (buffer_width + tile.imgLocColX > img.cols)
+		buffer_width = tile.width;
+	if (buffer_height + tile.imgLocRowY > img.rows)
+		buffer_height = tile.height;
+
+	// crop image to tile + buffer
+	cv::Rect tile_rect(tile.imgLocColX, tile.imgLocRowY, buffer_width, buffer_height);
+	cv::Mat tile_image = img(tile_rect);
+
+	std::vector<int> cmp(2);
+	cmp[0] = cv::IMWRITE_PNG_COMPRESSION;
+	cmp[1] = 4; // compression factor - use values of 0 to 9 - default is 1
+
+	// Reduce the number of rows and cols
+	cv::Mat resized_img;
+	double reduction = 0.50;
+	cv::resize(tile_image, resized_img, cv::Size(tile_image.cols * reduction, tile_image.rows * reduction), 0, 0, cv::INTER_LINEAR);
+
+	// write image to disk
+	std::string img_filename = html_img_dir + "/" + cell_name + "_" + std::to_string(tile.imgLocColX) + "_" + std::to_string(tile.imgLocRowY) + "_" + cell_type + ".png";
+	return cv::imwrite(img_filename, resized_img, cmp);
+}
 
 
 void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect, const std::vector<Tile_img>& tiles, std::int32_t large_cell_width, std::int32_t large_cell_height, bool whole_img, const cv::Mat& current_tile_image, Pixel_to_DEF_conversion convert_info, cv::Mat cell_template_img, int orientation)
@@ -747,7 +770,6 @@ void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect
 
 	// loop through the tiles
 	for (Tile_img tile : tiles) {
-		bool empty = true;
 		if (tile.aligned)
 		{
 			// Read in image for tiles[i]
@@ -757,13 +779,16 @@ void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect
 			else
 				img = cv::imread(tile.image_file);
 
+			bool empty = true;
+			cv::Mat m_img = img.clone();  // image to draw only missed cells on
+			cv::Mat e_img = img.clone();  // errant cells
 			for (Pt_info ptloc : cell.pt_locations)
 			{
 				// Make sure point is still on tile - otherwise can't display it
 				// ptloc.on_tile == i   // removed since example code puts every point on tile 0
-				if (((ptloc.pt.y > tile.imgLocRowY) && (ptloc.pt.y < tile.imgLocRowY + tile.height)
-					&& (ptloc.pt.x > tile.imgLocColX) && (ptloc.pt.x < tile.imgLocColX + tile.width))
-					&& ptloc.matched == 2) // missed cell
+				if (ptloc.matched == 2  // missed cell
+					&& ((ptloc.pt.y > tile.imgLocRowY) && (ptloc.pt.y < tile.imgLocRowY + tile.height)
+					&& (ptloc.pt.x > tile.imgLocColX) && (ptloc.pt.x < tile.imgLocColX + tile.width)))
 				{
 					empty = false;
 					// Make sub_img here and push to vector "missed"
@@ -772,7 +797,7 @@ void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect
 					// Draw rectangle on image (blue missed, red errant)
 					cv::Point display_pt = cv::Point(ptloc.pt.x, ptloc.pt.y);
 					cv::Rect roi(display_pt.x, display_pt.y, (int)cell.width, (int)cell.height);
-					cv::rectangle(img, roi, cv::Scalar{ 200, 0, 0 }, 4);
+					cv::rectangle(m_img, roi, cv::Scalar{ 200, 0, 0 }, 4);
 
 					// this will need to be changed to the whole tile, not each cell
 					// for tracking display in HTML report
@@ -781,72 +806,36 @@ void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect
 			}
 
 			if (!empty)
-			{
-				// ensure cells are not cut off by crop
-				std::uint32_t buffer_width = tile.width + large_cell_width;
-				std::uint32_t buffer_height = tile.height + large_cell_height;
-
-				// check whether tile is on edge
-				if (buffer_width + tile.imgLocColX > img.cols)
-					buffer_width = tile.width;
-				if (buffer_height + tile.imgLocRowY > img.rows)
-					buffer_height = tile.height;
-
-				// crop image to tile + buffer
-				cv::Rect tile_rect(tile.imgLocColX, tile.imgLocRowY, buffer_width, buffer_height);
-				cv::Mat tile_image = img(tile_rect);
-
-				std::vector<int> cmp(2);
-				cmp[0] = cv::IMWRITE_PNG_COMPRESSION;
-				cmp[1] = 4; // compression factor - use values of 0 to 9 - default is 1
-
-				// Reduce the number of rows and cols
-				cv::Mat resized_img;
-				double reduction = 0.50;
-				cv::resize(tile_image, resized_img, cv::Size(tile_image.cols * reduction, tile_image.rows * reduction), 0, 0, cv::INTER_LINEAR);
-
-				// write image to disk
-				std::string img_filename = html_img_dir + "/" + cell_name + "_" + std::to_string(tile.imgLocColX) + "_" + std::to_string(tile.imgLocRowY) + "_" + "m" + ".png";
-				cv::imwrite(img_filename, resized_img, cmp);
-			}
+				write_tile(tile, large_cell_width, large_cell_height, m_img, html_img_dir, cell_name, "m");
 
 			// ISSUES FOR ERRANT CELLS - WHAT TILE DO THEY FALL ON? 
 			// The cell type passed in is the same as the detect cell type passed in
-			// take lessons from missed cell logic and implement similar
-			for (int d = 0; d < cell_detect.size(); d++)
+			empty = true;
+			for (Pt_info e_cell : cell_detect)
 			{
-				if (cell_detect[d].matched == -1)
+				if (e_cell.matched == -1  // errant cell
+					&& ((e_cell.pt.x > tile.imgLocColX) && (e_cell.pt.x < tile.imgLocColX + tile.width))
+					&& ((e_cell.pt.y > tile.imgLocRowY) && (e_cell.pt.y < tile.imgLocRowY + tile.height)))
 				{
-					if ((cell_detect[d].pt.x > tile.imgLocColX) && (cell_detect[d].pt.x < tile.imgLocColX + tile.width))
-					{
-						if ((cell_detect[d].pt.y > tile.imgLocRowY) && (cell_detect[d].pt.y < tile.imgLocRowY + tile.height))
-						{
-							Img_sub tmp_sub2(cell_detect[d], cell.name, "e", html_img_dir, h_img_dir);
-							if (limit_images)
-							{
-								if (num_images_created_e < IMAGE_LIMIT)
-									tmp_sub2.write_image(cell_detect[d].pt.x, cell_detect[d].pt.y, cell.width, cell.height, img, tmp_sub2.img_file_name, tile.imgLocColX, tile.imgLocRowY, "e", large_cell_width);
-							}
-							else
-								tmp_sub2.write_image(cell_detect[d].pt.x, cell_detect[d].pt.y, cell.width, cell.height, img, tmp_sub2.img_file_name, tile.imgLocColX, tile.imgLocRowY, "e", large_cell_width);
+					empty = false;
+					Img_sub tmp_sub2(e_cell, cell.name, "e", html_img_dir, h_img_dir);
 
-							num_images_created_e++;
+					cv::Point display_pt = cv::Point(e_cell.pt.x, e_cell.pt.y);
+					cv::Rect roi(display_pt.x, display_pt.y, (int)cell.width, (int)cell.height);
+					cv::rectangle(e_img, roi, cv::Scalar{ 0, 0, 200 }, 4);
 
-							// Convert coords of tmp_sub2 to DEF point
-							cv::Point pixel_pt = cv::Point(tmp_sub2.coords.x, tmp_sub2.coords.y);
+					// Convert coords of tmp_sub2 to DEF point
+					cv::Point pixel_pt = cv::Point(tmp_sub2.coords.x, tmp_sub2.coords.y);
 
-							// DON"T KNOW THE CORRECT CELL WIDTH SINCE IT"S ERRANT SO WON"T GET EXACT DEF LOCATION
-							tmp_sub2.def_coords = convert_pixel_to_DEF_pt(convert_info, pixel_pt, cell.width, 0, tile.pixel_size_x, tile.pixel_size_y, true);
+					// DON"T KNOW THE CORRECT CELL WIDTH SINCE IT"S ERRANT SO WON"T GET EXACT DEF LOCATION
+					tmp_sub2.def_coords = convert_pixel_to_DEF_pt(convert_info, pixel_pt, cell.width, 0, tile.pixel_size_x, tile.pixel_size_y, true);
 
-							// Debug
-							//cv::Point test_pt1;
-							//test_pt1 = convert_pixel_to_DEF_pt(convert_info, cv::Point(2461, 2945), 99, i, tiles[i].pixel_size_x, tiles[i].pixel_size_y, true);
-
-							errant.push_back(tmp_sub2);
-						}
-					}
+					errant.push_back(tmp_sub2);
 				}
 			}
+
+			if (!empty)
+				write_tile(tile, large_cell_width, large_cell_height, e_img, html_img_dir, cell_name, "e");
 		}
 	}
 }
@@ -901,9 +890,6 @@ void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect
 	}	// end for loop
 
 }	// end of setup_section
-
-
-
 
 
 //-----------------------------------------------------------------------------
