@@ -882,13 +882,13 @@ Html_img::Html_img(const std::vector<Cell_info> &cell_list, const std::vector<st
 void write_template_table(std::ostream& out, std::string templ_filename)
 {
 
-	out << "<table style = \" width: fit-content; border-collapse: collapse; border: 3px solid rgb(140 140 140):\">" << std::endl;
+	out << "<table style = \" width: fit-content; border-collapse: collapse; border: 3px solid rgb(140 140 140);\">" << std::endl;
 	out << "<tr style = \"height: 50px;\">" << std::endl;
 	std::vector<std::string> snames{"N", "FN"};
 	for (int i = 0; i < snames.size(); i++)
 	{
 
-		out << "<td style=\"text - align: center;  padding: 0px; border: 3px solid rgb(140, 140, 140);\">" << std::endl;
+		out << "<td style=\"text-align: center;  padding: 0px; border: 3px solid rgb(140, 140, 140);\">" << std::endl;
 		out << "<img style = \"display: block;\" width = \"100%\" height = \"100%\" src = \"" + templ_filename + "_" + snames[i] + ".png\" alt = \"template image\" />" << std::endl;
 
 		out << "</td>" << std::endl;
@@ -901,9 +901,9 @@ void write_template_table(std::ostream& out, std::string templ_filename)
 	std::vector<std::string> snames2{"S", "FS"};
 	for (int i = 0; i < snames2.size(); i++)
 	{
-		//out << "<table style = \" width: fit-content; border-collapse: collapse; border: 2px solid rgb(140 140 140):\">";
+		//out << "<table style = \" width: fit-content; border-collapse: collapse; border: 2px solid rgb(140 140 140);\">";
 		//out << "<tr style = \"height: 100px;\">";
-		out << "<td style=\"text - align: center;  padding: 0px; border: 3px solid rgb(140, 140, 140);\">" << std::endl;
+		out << "<td style=\"text-align: center;  padding: 0px; border: 3px solid rgb(140, 140, 140);\">" << std::endl;
 		out << "<img style = \"display: block;\" width = \"100%\" height = \"100%\" src = \"" + templ_filename + "_" + snames2[i] + ".png\" alt = \"test image\" />" << std::endl;
 
 		out << "</td>" << std::endl;
@@ -912,6 +912,54 @@ void write_template_table(std::ostream& out, std::string templ_filename)
 	out << "</tr>" << std::endl;
 	out << "</table>" << std::endl;
 
+}
+
+void write_coordinates_table(std::ostream& out, std::vector<Img_sub> cell_list, int check_tile) {
+	// coordinates table header
+	out << "<table style=\"line-height:50%\">" << std::endl;
+	out << "<tr>" << std::endl;
+	out << "<th>Global Pixel Coordinates(x,y)</th>" << std::endl;
+	out << "<th>DEF Coordinates(x,y)</th>" << std::endl;
+	out << "</tr>" << std::endl;
+
+	// display coordinates for every cell in tile
+	for (Img_sub cell : cell_list) {
+		if (cell.on_tile == check_tile) {
+			out << "<tr>" << std::endl;
+			std::string glob_coords = std::to_string(cell.coords.x) + ", " + std::to_string(cell.coords.y);
+			std::string def_coords = std::to_string(cell.def_coords.x) + ", " + std::to_string(cell.def_coords.y);
+			out << "<td>" << glob_coords << "</td>" << std::endl;
+			out << "<td>" << def_coords << "</td>" << std::endl;
+			out << "</tr>" << std::endl;
+		}
+	}
+	out << "</table>" << std::endl;
+}
+
+void write_section(std::ostream& out, std::vector<Img_sub> cell_list, std::string label, std::vector<Tile_path> paths) {
+	if (!cell_list.empty())
+	{
+		out << "<div class=\"img_sub\">" << std::endl;
+		out << "<h3>Missed Cells</h3>" << std::endl;
+
+		for (Tile_path tile : paths)
+		{
+			out << "<h3>Tile " << tile.tile_id << "</h3>" << std::endl;
+			out << "<img" << std::endl;
+			out << "class = \"fit-picture\"" << std::endl;
+			out << "src = \"" << tile.img_filename << "\"" << std::endl;
+			out << "alt = \"" << label << "standard cell\"" << std::endl;
+			// Defines image height/width on html
+			//out << "width = \"" << std::to_string(magnify * missed[j].html_img_width) << "\"" << std::endl;
+			//out << "height = \"" << std::to_string(magnify * missed[j].html_img_height) << "\"" << std::endl;
+			out << "/>" << std::endl;
+
+			write_coordinates_table(out, cell_list, tile.tile_id);
+
+			out << "<form action=\"#Table1\"> <input type=\"submit\" value=\"Back to Table\" /> </form>" << std::endl;
+		}
+		out << "</div>" << std::endl;
+	}
 }
 
 //******************************************************
@@ -938,73 +986,11 @@ std::ostream& operator << (std::ostream& out, Html_img img_tmp)
 		// end template image
 
 		// Magnifying factor for images - fix this based on reduction above
-		int magnify = 1;  // Change if the missed and errant images on html are too small.
-		if (!img_tmp.sections[i].missed.empty())
-		{
-			out << "<div class=\"img_sub\">" << std::endl;
-			out << "<h3>Missed Cells</h3>" << std::endl;
+		//int magnify = 1;  // Change if the missed and errant images on html are too small.
+		write_section(out, img_tmp.sections[i].missed, "Missed", img_tmp.sections[i].m_img_paths);
+		write_section(out, img_tmp.sections[i].errant, "Errant", img_tmp.sections[i].e_img_paths);
 
-			for (Tile_path tile : img_tmp.sections[i].m_img_paths)
-			{
-				out << "<h3>Tile " << tile.tile_id << "</h3>" << std::endl;
-				out << "<img" << std::endl;
-				out << "class = \"fit-picture\"" << std::endl;
-				out << "src = \"" << tile.img_filename << "\"" << std::endl;
-				out << "alt = \"Missed standard cell\"" << std::endl;
-				// Defines image height/width on html
-				//out << "width = \"" << std::to_string(magnify * missed[j].html_img_width) << "\"" << std::endl;
-				//out << "height = \"" << std::to_string(magnify * missed[j].html_img_height) << "\"" << std::endl;
-				out << "/>" << std::endl;
-
-				// display coordinates for every cell in tile
-				for (Img_sub m_cell : img_tmp.sections[i].missed) {
-					if (m_cell.on_tile == tile.tile_id) {
-						std::string glob_heading = "Global Pixel Coordinates(x,y): " + std::to_string(m_cell.coords.x) + ", " + std::to_string(m_cell.coords.y);
-						std::string def_heading = "DEF Coordinates(x,y): " + std::to_string(m_cell.def_coords.x) + ", " + std::to_string(m_cell.def_coords.y);
-						out << "<h4>" << glob_heading << "</h4>" << std::endl;
-						out << "<h4>" << def_heading << "</h4>" << std::endl;
-					}
-				}
-
-				out << "<form action=\"#Table1\"> <input type=\"submit\" value=\"Back to Table\" /> </form>" << std::endl;
-			}
-			out << "</div>" << std::endl;
-		}
-
-
-		if (!img_tmp.sections[i].errant.empty())
-		{
-			out << "<div class=\"img_sub\">" << std::endl;
-			out << "<h3>Errant Cells</h3>" << std::endl;
-
-			for (Tile_path tile : img_tmp.sections[i].e_img_paths)
-			{
-				out << "<h3>Tile " << tile.tile_id << "</h3>" << std::endl;
-				out << "<img" << std::endl;
-				out << "class = \"fit-picture\"" << std::endl;
-				out << "src = \"" << tile.img_filename << "\"" << std::endl;
-				out << "alt = \"Errant standard cell\"" << std::endl;
-				// Defines image height/width on html
-				//out << "width = \"" << std::to_string(magnify * missed[j].html_img_width) << "\"" << std::endl;
-				//out << "height = \"" << std::to_string(magnify * missed[j].html_img_height) << "\"" << std::endl;
-				out << "/>" << std::endl;
-
-				// display coordinates for every cell in tile
-				for (Img_sub e_cell : img_tmp.sections[i].errant) {
-					if (e_cell.on_tile == tile.tile_id) {
-						std::string glob_heading = "Global Pixel Coordinates(x,y): " + std::to_string(e_cell.coords.x) + ", " + std::to_string(e_cell.coords.y);
-						std::string def_heading = "DEF Coordinates(x,y): " + std::to_string(e_cell.def_coords.x) + ", " + std::to_string(e_cell.def_coords.y);
-						out << "<h4>" << glob_heading << "</h4>" << std::endl;
-						out << "<h4>" << def_heading << "</h4>" << std::endl;
-					}
-				}
-
-				out << "<form action=\"#Table1\"> <input type=\"submit\" value=\"Back to Table\" /> </form>" << std::endl;
-			}
-			out << "</div>" << std::endl;
-		}
 		out << "</div>" << std::endl;
-
 	}
 	out << "</div>" << std::endl;
 
