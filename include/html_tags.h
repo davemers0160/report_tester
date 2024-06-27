@@ -20,7 +20,7 @@ class Html_ul
 {
 private:
 	std::vector<std::string> data_list;
-	std::uint32_t is_cells; 
+	std::uint32_t is_cells;
 
 public:
 	Html_ul(const std::vector<std::string> &data_list, bool is_cells);
@@ -71,20 +71,20 @@ void Html_ul::write_rows(std::ostream& out)
 //******************************************************
 // Overloaded stream output operator << for ul         *
 //******************************************************
-	std::ostream& operator << (std::ostream& out, Html_ul ul_tmp)
-	{
-		out << "<div class=\"section_list\">" << std::endl;
-		ul_tmp.write_heading(out, ul_tmp.is_cells);
-		// Write beginning tag for ul
-		out << "<ul>" << std::endl;
-		ul_tmp.write_rows(out);
-		// Write end tag for ul
-		out << "</ul>" << std::endl;
-		// Write end tag for div
-		out << "</div>" << std::endl;
-		return out;
-	}
-	
+std::ostream& operator << (std::ostream& out, Html_ul ul_tmp)
+{
+	out << "<div class=\"section_list\">" << std::endl;
+	ul_tmp.write_heading(out, ul_tmp.is_cells);
+	// Write beginning tag for ul
+	out << "<ul>" << std::endl;
+	ul_tmp.write_rows(out);
+	// Write end tag for ul
+	out << "</ul>" << std::endl;
+	// Write end tag for div
+	out << "</div>" << std::endl;
+	return out;
+}
+
 
 ////////////////////////////////////////////////
 ////////////////////////////////////////////////
@@ -167,7 +167,7 @@ class Html_params
 {
 public:
 	std::string heading = "Parameter Settings";
-	Params_table search_params; 
+	Params_table search_params;
 	Params_table tile_binary_params;
 
 	Html_params();
@@ -181,7 +181,7 @@ Html_params::Html_params() {};
 
 void Html_params::get_params(std::vector<Tile_img> tiles, double match_thresh, double overlap_threshold, double distance_error)
 {
-	setup_search_params(overlap_threshold, distance_error); 
+	setup_search_params(overlap_threshold, distance_error);
 	setup_tile_params( tiles, match_thresh);
 }
 
@@ -197,7 +197,7 @@ void Html_params::setup_search_params(double overlap_threshold, double distance_
 void Html_params::setup_tile_params(std::vector<Tile_img> tiles, double match_thresh)
 {
 	std::string tmp_val, tmp_val2, tmp_val3, tmp_label;
-	
+
 	tile_binary_params.section_heading = "Tile Binary Parameter Settings";
 	tile_binary_params.table_headings = {"Tile Number", "Structural Element Size","Binary Threshold", "Match Threshold"};
 
@@ -332,7 +332,7 @@ Html_table::Html_table(const std::vector<Cell_info> &cells, const std::vector<st
 	// Calculate used cell area now - before converting nanometers to pixels (mirror_cell_locations)
 	// Only report tiles looked at
 	// Pass in tile_cells and matched info
-	
+
 	// Pass in matched and errant cells
 	calc_percent_area_found(cells, detects, tiles, corebox_area);
 	std::int32_t num_cells = (int32_t)cells.size();
@@ -351,7 +351,7 @@ int32_t Html_table::get_total_cells(const std::vector<Tile_img>& tiles, std::int
 }
 
 
-void Html_table::get_table_rows(const std::vector<Cell_info> &cells, const std::vector<std::vector<Pt_info>> &detects, const std::vector<Tile_img>& tiles)
+void Html_table::get_table_rows(const std::vector<Cell_info>& cells, const std::vector<std::vector<Pt_info>>& detects, const std::vector<Tile_img>& tiles)
 {
 	for (int i = 0; i < cells.size(); i++)
 	{
@@ -486,7 +486,7 @@ std::ostream& operator << (std::ostream& out, Html_table table_tmp)
 	}
 	out << "</tbody>" << std::endl;
 
-	
+
 	// Add percentage of design cells
 	out << "<tfoot>" << std::endl;
 	out << "<tr>" << std::endl;
@@ -512,12 +512,12 @@ std::ostream& operator << (std::ostream& out, Html_table table_tmp)
 	out << "</table>" << std::endl;
 
 	// Write percentage of found area
-	std::string s = std::to_string(table_tmp.percent_area_found).substr(0,4);
+	std::string s = std::to_string(table_tmp.percent_area_found).substr(0, 4);
 	std::string str_darea = "Percent of area of found cells to area of design cells : " + s + "%";
 	out << "<h4>" << str_darea << "</h4>" << std::endl;
 
 	std::string proc_string1 = "Time to process finding cells: " + std::to_string(table_tmp.proc_time).substr(0, 6) + " seconds.";
-	std::string proc_string2 = "Time to process finding cells: " + std::to_string(table_tmp.proc_time/3600.0).substr(0, 5) + " hours.";
+	std::string proc_string2 = "Time to process finding cells: " + std::to_string(table_tmp.proc_time / 3600.0).substr(0, 5) + " hours.";
 	out << "<h4>" << proc_string1 << "</h4>" << std::endl;
 	out << "<h4>" << proc_string2 << "</h4>" << std::endl;
 
@@ -532,91 +532,26 @@ std::ostream& operator << (std::ostream& out, Html_table table_tmp)
 // Html_img is made up of Img_sections.  Each Img_section (based on cell) is made up of 2 vectors (missed, errant) of Img_subs.
 
 // Contains all information needed to printout a missed or errant cell (text and image)
-class Img_sub 
+class Img_sub
 {
 public:
-	cv::Point coords; //x,y
-	cv::Point def_coords; //x,y
-	std::string img_file_name;
-	std::string himg_filename;
-	std::int32_t sub_img_width = 0;
-	std::int32_t sub_img_height = 0;
-	std::int32_t html_img_width = 0;
-	std::int32_t html_img_height = 150;
+	cv::Point coords;
+	cv::Point def_coords;
+	std::string type;
+	uint32_t on_tile;
 
-	Img_sub(Pt_info ptloc, std::string cell_name, std::string type, std::string html_img_dir, std::string h_img_dir); // type is "m" or "e"
-	void write_image(int ptloc_x, int ptloc_y, int cell_width, int cell_height, cv::Mat img, std::string sub_img_filename, std::int32_t tilex, std::int32_t tiley, std::string type, std::int32_t large_cell_width);
+	Img_sub(Pt_info ptloc, std::string type, uint32_t on_tile); // type is "m" or "e"
 };
 
 // Constructor:  added image zoom information to create image
 // Used missed and errant to setup separate sections
 // Note: Type:  m for missed, e for errant
-Img_sub::Img_sub(Pt_info ptloc, std::string cell_name, std::string type, std::string html_img_dir, std::string h_img_dir)
+Img_sub::Img_sub(Pt_info ptloc, std::string type, uint32_t on_tile)
+	: type(type), on_tile(on_tile)
 {
 	coords = ptloc.pt;
 	def_coords = ptloc.defpt;
-	img_file_name = html_img_dir + "/" + cell_name + "_" + std::to_string(coords.x) + "_" + std::to_string(coords.y) + "_" + type + ".png";
-	himg_filename = h_img_dir + "/" + cell_name + "_" + std::to_string(coords.x) + "_" + std::to_string(coords.y) + "_" + type + ".png";
 }
-
-
-void Img_sub::write_image(int ptloc_x, int ptloc_y, int cell_width, int cell_height, cv::Mat img, std::string sub_img_filename, std::int32_t tilex, std::int32_t tiley, std::string type, std::int32_t large_cell_width)
-{
-	cv::Mat imgW = img.clone();
-	// Draw rectangle on image (blue missed, red errant)
-	cv::Point display_pt = cv::Point(ptloc_x - tilex, ptloc_y - tiley);
-	cv::Rect roi(display_pt.x, display_pt.y, (int)cell_width, (int)cell_height);
-	if (type == "m")
-		cv::rectangle(imgW, roi, cv::Scalar{200, 0, 0}, 4);
-	else if (type == "e")
-		cv::rectangle(imgW, roi, cv::Scalar{0, 0, 200}, 4);
-		// Define rectangle for subsection image
-		sub_img_width = 4 * large_cell_width; // 4 * cell_width;
-		sub_img_height = 4 * cell_height;
-		//if ((ptloc_x + sub_img_width < tilex) && (ptloc_y + sub_img_height < tiley)) {
-		cv::Size sz = imgW.size();
-		int img_width = sz.width;
-		int img_height = sz.height;
-		// Find center of cell and subtract to get start of image
-		cv::Point cell_center;
-		cell_center.x = ptloc_x - tilex + (int)floor(cell_width / 2);
-		cell_center.y = ptloc_y - tiley + (int)floor(cell_height / 2);
-		int sx = cell_center.x - (int)floor(sub_img_width / 2);
-		int sy = cell_center.y - (int)floor(sub_img_height / 2);
-		// Test for left edge/top of img
-		sx = std::max(1, sx);
-		sy = std::max(1, sy);
-
-		// Test for right edge/bottom of img
-		if (img_width - sx < sub_img_width)
-			sx = img_width - sub_img_width;
-		if (img_height - sy < sub_img_height)
-			sy = img_height - sub_img_height;
-
-		cv::Rect rect = cv::Rect(sx, sy, sub_img_width, sub_img_height);
-		cv::Mat sub_image = imgW(rect);
-
-		//cv::namedWindow("cropped_image", cv::WINDOW_GUI_EXPANDED | cv::WINDOW_KEEPRATIO);
-		//cv::imshow("cropped_image", sub_image);
-		//cv::waitKey(0);
-
-		// Write/Save images of missed and errant cells
-		std::vector<int> cmp(2);
-		cmp[0] = cv::IMWRITE_PNG_COMPRESSION;
-		cmp[1] = 4; // compression factor - use values of 0 to 9 - default is 1
-
-		// Reduce the number of rows and cols
-		cv::Mat resized_img;
-		double reduction = 0.50;
-		cv::resize(sub_image, resized_img, cv::Size(sub_image.cols * reduction, sub_image.rows * reduction), 0, 0, cv::INTER_LINEAR);
-
-		cv::imwrite(sub_img_filename, resized_img, cmp);
-
-		// Find width for html
-		html_img_width = (int32_t)floor((double)sub_img_width * ((double)html_img_height / (double)sub_img_height));
-	}
-//}
-
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // Write all matched_templates template images for each orientation to dir template_images
@@ -639,6 +574,11 @@ void write_template_imgs(std::vector<matched_template> matched_templates, std::v
 	}
 }
 
+struct Tile_path {
+	int tile_id;
+	std::string img_filename;
+};
+
 // Contains all information to write out missed and errant cells attributed to one cell type
 class Img_section
 {
@@ -652,13 +592,15 @@ public:
 	std::string section_subheading_height;
 	std::vector<Img_sub> missed;
 	std::vector<Img_sub> errant;
+	std::vector<Tile_path> m_img_paths;
+	std::vector<Tile_path> e_img_paths;
 
 	Img_section(Cell_info cell, std::vector<Pt_info> cell_detect, const std::vector<Tile_img>& tiles, std::int32_t large_cell_width, std::int32_t large_cell_height, bool whole_img, const cv::Mat& current_tile_image, std::string html_id, std::string h_id, std::string tmp_ld, Pixel_to_DEF_conversion convert_info, cv::Mat cell_template_img, int orientation)
 		: html_img_dir(html_id), h_img_dir(h_id), templ_dir(tmp_ld)
 	{
 		setup_section(cell, cell_detect, tiles, large_cell_width, large_cell_height, whole_img, current_tile_image, convert_info, cell_template_img, orientation);
 	}
-	
+
 	void setup_section(Cell_info cell, std::vector<Pt_info> cell_detect, const std::vector<Tile_img>& tiles, std::int32_t large_cell_width, std::int32_t large_cell_height, bool whole_img, const cv::Mat& current_tile_image, Pixel_to_DEF_conversion convert_info, cv::Mat cell_template_img, int orientation);
 
 	void setup_section(Cell_info cell, std::vector<Pt_info> cell_detect, const std::vector<Tile_img>& tiles, bool whole_img, const cv::Mat& current_tile_image, cv::Mat cell_template_img, int orientation);
@@ -722,7 +664,7 @@ private:
 	}
 };
 
-bool write_tile(Tile_img tile, std::int32_t large_cell_width, std::int32_t large_cell_height, cv::Mat img, std::string html_img_dir, std::string cell_name, std::string cell_type) {
+std::string write_tile(Tile_img tile, std::int32_t large_cell_width, std::int32_t large_cell_height, cv::Mat img, std::string html_img_dir, std::string cell_name, std::string cell_type) {
 	// ensure cells are not cut off by crop
 	std::uint32_t buffer_width = tile.width + large_cell_width;
 	std::uint32_t buffer_height = tile.height + large_cell_height;
@@ -748,9 +690,9 @@ bool write_tile(Tile_img tile, std::int32_t large_cell_width, std::int32_t large
 
 	// write image to disk
 	std::string img_filename = html_img_dir + "/" + cell_name + "_" + std::to_string(tile.imgLocColX) + "_" + std::to_string(tile.imgLocRowY) + "_" + cell_type + ".png";
-	return cv::imwrite(img_filename, resized_img, cmp);
+	cv::imwrite(img_filename, resized_img, cmp);
+	return img_filename;
 }
-
 
 void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect, const std::vector<Tile_img>& tiles, std::int32_t large_cell_width, std::int32_t large_cell_height, bool whole_img, const cv::Mat& current_tile_image, Pixel_to_DEF_conversion convert_info, cv::Mat cell_template_img, int orientation)
 {
@@ -764,12 +706,14 @@ void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect
 	bool limit_images = true;
 	int32_t num_images_created = 0;
 	int32_t num_images_created_e = 0;
+	std::string filename;
 
 	// create the cell header info display
 	create_template_header(cell, cell_template_img, orientation);
 
 	// loop through the tiles
-	for (Tile_img tile : tiles) {
+	for (int idx = 0; idx < tiles.size(); ++idx) {
+		Tile_img tile = tiles[idx];
 		if (tile.aligned)
 		{
 			// Read in image for tiles[i]
@@ -785,28 +729,32 @@ void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect
 			for (Pt_info ptloc : cell.pt_locations)
 			{
 				// Make sure point is still on tile - otherwise can't display it
-				// ptloc.on_tile == i   // removed since example code puts every point on tile 0
 				if (ptloc.matched == 2  // missed cell
 					&& ((ptloc.pt.y > tile.imgLocRowY) && (ptloc.pt.y < tile.imgLocRowY + tile.height)
-					&& (ptloc.pt.x > tile.imgLocColX) && (ptloc.pt.x < tile.imgLocColX + tile.width)))
+						&& (ptloc.pt.x > tile.imgLocColX) && (ptloc.pt.x < tile.imgLocColX + tile.width)))
 				{
 					empty = false;
-					// Make sub_img here and push to vector "missed"
-					Img_sub tmp_sub(ptloc, cell.name, "m", html_img_dir, h_img_dir);
-					// Create image on html
 					// Draw rectangle on image (blue missed, red errant)
 					cv::Point display_pt = cv::Point(ptloc.pt.x, ptloc.pt.y);
 					cv::Rect roi(display_pt.x, display_pt.y, (int)cell.width, (int)cell.height);
 					cv::rectangle(m_img, roi, cv::Scalar{ 200, 0, 0 }, 4);
 
-					// this will need to be changed to the whole tile, not each cell
-					// for tracking display in HTML report
+					// Make sub_img here and push to vector "missed"
+					Img_sub tmp_sub(ptloc, "m", idx);
 					missed.push_back(tmp_sub);
 				}
 			}
 
 			if (!empty)
-				write_tile(tile, large_cell_width, large_cell_height, m_img, html_img_dir, cell_name, "m");
+			{
+				filename = write_tile(tile, large_cell_width, large_cell_height, m_img, html_img_dir, cell_name, "m");
+				Tile_path tile_path = {
+					idx,
+					filename
+				};
+				m_img_paths.push_back(tile_path);
+			}
+
 
 			// ISSUES FOR ERRANT CELLS - WHAT TILE DO THEY FALL ON? 
 			// The cell type passed in is the same as the detect cell type passed in
@@ -818,24 +766,29 @@ void Img_section::setup_section(Cell_info cell, std::vector<Pt_info> cell_detect
 					&& ((e_cell.pt.y > tile.imgLocRowY) && (e_cell.pt.y < tile.imgLocRowY + tile.height)))
 				{
 					empty = false;
-					Img_sub tmp_sub2(e_cell, cell.name, "e", html_img_dir, h_img_dir);
 
 					cv::Point display_pt = cv::Point(e_cell.pt.x, e_cell.pt.y);
 					cv::Rect roi(display_pt.x, display_pt.y, (int)cell.width, (int)cell.height);
 					cv::rectangle(e_img, roi, cv::Scalar{ 0, 0, 200 }, 4);
 
+					Img_sub tmp_sub2(e_cell, "e", idx);
 					// Convert coords of tmp_sub2 to DEF point
 					cv::Point pixel_pt = cv::Point(tmp_sub2.coords.x, tmp_sub2.coords.y);
-
 					// DON"T KNOW THE CORRECT CELL WIDTH SINCE IT"S ERRANT SO WON"T GET EXACT DEF LOCATION
 					tmp_sub2.def_coords = convert_pixel_to_DEF_pt(convert_info, pixel_pt, cell.width, 0, tile.pixel_size_x, tile.pixel_size_y, true);
-
 					errant.push_back(tmp_sub2);
 				}
 			}
 
 			if (!empty)
-				write_tile(tile, large_cell_width, large_cell_height, e_img, html_img_dir, cell_name, "e");
+			{
+				filename = write_tile(tile, large_cell_width, large_cell_height, e_img, html_img_dir, cell_name, "e");
+				Tile_path tile_path = {
+					idx,
+					filename
+				};
+				e_img_paths.push_back(tile_path);
+			}
 		}
 	}
 }
@@ -909,7 +862,7 @@ Html_img::Html_img(const std::vector<Cell_info> &cell_list, const std::vector<st
 	// Make sections based on cell type
 	for (int cnum = 0; cnum < cell_list.size(); cnum ++)
 	{
-		if (cell_list[cnum].selected == true) 
+		if (cell_list[cnum].selected == true)
 		{
 			if (matched_templates[cnum].imgs.size() > 0)
 			{
@@ -928,7 +881,7 @@ Html_img::Html_img(const std::vector<Cell_info> &cell_list, const std::vector<st
 //******************************************************
 void write_template_table(std::ostream& out, std::string templ_filename)
 {
-	
+
 	out << "<table style = \" width: fit-content; border-collapse: collapse; border: 3px solid rgb(140 140 140):\">" << std::endl;
 	out << "<tr style = \"height: 50px;\">" << std::endl;
 	std::vector<std::string> snames{"N", "FN"};
@@ -966,87 +919,92 @@ void write_template_table(std::ostream& out, std::string templ_filename)
 //******************************************************
 std::ostream& operator << (std::ostream& out, Html_img img_tmp)
 {
-	//int limit_output = 25;
 	out << "<div class=\"section_img_html\">" << std::endl;
 	// Write image heading
 	out << "<h2>" << img_tmp.heading << "</h2>" << std::endl;
 
 	for (int i = 0; i < img_tmp.sections.size(); i++)
 	{
+		// Save image of template 
+		out << "<div class=\"img_section\">" << std::endl;
+		out << "<h2" << img_tmp.sections[i].section_heading << "</h2>" << std::endl;
+		out << "<h4>" << "Cell width: " << img_tmp.sections[i].section_subheading_width << "</h4>" << std::endl;
+		out << "<h4>" << "Cell height: " << img_tmp.sections[i].section_subheading_height << "</h4>" << std::endl;
+		// Add NEW template images
+		write_template_table(out, img_tmp.sections[i].templ_filename);
+		out << "<h4>" << "Binary Cell Templates:  Orientations N, FN, S, FS" << "</h4>" << std::endl;
+		if (img_tmp.sections[i].missed.empty() && img_tmp.sections[i].errant.empty())
+			out << "<h4>" << "Note:  No missed or errant cells." << "</h4>" << std::endl;
+		// end template image
 
-			// Save image of template 
-			//cv::imwrite(img_tmp.sections[i].templ_img_filename, img_tmp.sections[i].cell_templ_img);
+		// Magnifying factor for images - fix this based on reduction above
+		int magnify = 1;  // Change if the missed and errant images on html are too small.
+		if (!img_tmp.sections[i].missed.empty())
+		{
+			out << "<div class=\"img_sub\">" << std::endl;
+			out << "<h3>Missed Cells</h3>" << std::endl;
 
-			out << "<div class=\"img_section\">" << std::endl;
-			out << "<h2" << img_tmp.sections[i].section_heading << "</h2>" << std::endl;
-			out << "<h4>" << "Cell width: " << img_tmp.sections[i].section_subheading_width << "</h4>" << std::endl;
-			out << "<h4>" << "Cell height: " << img_tmp.sections[i].section_subheading_height << "</h4>" << std::endl;
-			// Add NEW template images
-			write_template_table(out, img_tmp.sections[i].templ_filename);
-			out << "<h4>" << "Binary Cell Templates:  Orientations N, FN, S, FS" << "</h4>" << std::endl;
-			if (img_tmp.sections[i].missed.empty() && img_tmp.sections[i].errant.empty())
-				out << "<h4>" << "Note:  No missed or errant cells." << "</h4>" << std::endl;
-			// end template image
-
-			// Magnifying factor for images - fix this based on reduction above
-			int magnify = 1;  // Change if the missed and errant images on html are too small.
-			if (!img_tmp.sections[i].missed.empty())
+			for (Tile_path tile : img_tmp.sections[i].m_img_paths)
 			{
-				std::vector<Img_sub> missed = img_tmp.sections[i].missed;
-				out << "<div class=\"img_sub\">" << std::endl;
-				out << "<h3>Missed Cells</h3>" << std::endl;
+				out << "<h3>Tile " << tile.tile_id << "</h3>" << std::endl;
+				out << "<img" << std::endl;
+				out << "class = \"fit-picture\"" << std::endl;
+				out << "src = \"" << tile.img_filename << "\"" << std::endl;
+				out << "alt = \"Missed standard cell\"" << std::endl;
+				// Defines image height/width on html
+				//out << "width = \"" << std::to_string(magnify * missed[j].html_img_width) << "\"" << std::endl;
+				//out << "height = \"" << std::to_string(magnify * missed[j].html_img_height) << "\"" << std::endl;
+				out << "/>" << std::endl;
 
-				int limit_missed = IMAGE_LIMIT;
-				limit_missed = (limit_missed < missed.size()) ? limit_missed : missed.size();
-
-				for (int j = 0; j < limit_missed; j++)
-				{
-					std::string glob_heading = "Global Pixel Coordinates(x,y): " + std::to_string(missed[j].coords.x) + ", " + std::to_string(missed[j].coords.y);
-					std::string def_heading = "DEF Coordinates(x,y): " + std::to_string(missed[j].def_coords.x) + ", " + std::to_string(missed[j].def_coords.y);
-					out << "<h4>" << glob_heading << "</h4>" << std::endl;
-					out << "<h4>" << def_heading << "</h4>" << std::endl;
-					out << "<img" << std::endl;
-					out << "class = \"fit-picture\"" << std::endl;
-					out << "src = \"" << missed[j].himg_filename << "\"" << std::endl;
-					out << "alt = \"Missed standard cell\"" << std::endl;
-					// Defines image height/width on html
-					out << "width = \"" << std::to_string(magnify * missed[j].html_img_width) << "\"" << std::endl;
-					out << "height = \"" << std::to_string(magnify * missed[j].html_img_height) << "\"" << std::endl;
-					out << "/>" << std::endl;
-					out << "<form action=\"#Table1\"> <input type=\"submit\" value=\"Back to Table\" /> </form>" << std::endl;
+				// display coordinates for every cell in tile
+				for (Img_sub m_cell : img_tmp.sections[i].missed) {
+					if (m_cell.on_tile == tile.tile_id) {
+						std::string glob_heading = "Global Pixel Coordinates(x,y): " + std::to_string(m_cell.coords.x) + ", " + std::to_string(m_cell.coords.y);
+						std::string def_heading = "DEF Coordinates(x,y): " + std::to_string(m_cell.def_coords.x) + ", " + std::to_string(m_cell.def_coords.y);
+						out << "<h4>" << glob_heading << "</h4>" << std::endl;
+						out << "<h4>" << def_heading << "</h4>" << std::endl;
+					}
 				}
-				out << "</div>" << std::endl;
-			}
 
-			
-			if (!img_tmp.sections[i].errant.empty())
-			{
-				std::vector<Img_sub> errant = img_tmp.sections[i].errant;
-				out << "<div class=\"img_sub_e\">" << std::endl;
-				out << "<h3>Errant Cells</h3>" << std::endl;
-
-				int limit_errant = IMAGE_LIMIT;
-				limit_errant = (limit_errant < errant.size()) ? limit_errant : errant.size();
-
-				for (int j = 0; j < limit_errant; j++)
-				{
-					std::string glob_heading = "Global Pixel Coordinates(x,y): " + std::to_string(errant[j].coords.x) + ", " + std::to_string(errant[j].coords.y);
-					std::string def_heading = "Approximate DEF Coordinates(x,y): " + std::to_string(errant[j].def_coords.x) + ", " + std::to_string(errant[j].def_coords.y);
-					out << "<h4>" << glob_heading << "</h4>" << std::endl;
-					out << "<h4>" << def_heading << "</h4>" << std::endl;
-					out << "<img" << std::endl;
-					out << "class = \"fit-picture\"" << std::endl;
-					out << "src = \"" << errant[j].himg_filename << "\"" << std::endl;
-					out << "alt = \"Errant standard cell\"" << std::endl;
-					out << "width = \"" << std::to_string(magnify * errant[j].html_img_width) << "\"" << std::endl;
-					out << "height = \"" << std::to_string(magnify * errant[j].html_img_height) << "\"" << std::endl;
-					out << "/>" << std::endl;
-					out << "<form action=\"#Table1\"> <input type=\"submit\" value=\"Back to Table\" /> </form>" << std::endl;
-				}
-				out << "</div>" << std::endl;
+				out << "<form action=\"#Table1\"> <input type=\"submit\" value=\"Back to Table\" /> </form>" << std::endl;
 			}
 			out << "</div>" << std::endl;
-		
+		}
+
+
+		if (!img_tmp.sections[i].errant.empty())
+		{
+			out << "<div class=\"img_sub\">" << std::endl;
+			out << "<h3>Errant Cells</h3>" << std::endl;
+
+			for (Tile_path tile : img_tmp.sections[i].e_img_paths)
+			{
+				out << "<h3>Tile " << tile.tile_id << "</h3>" << std::endl;
+				out << "<img" << std::endl;
+				out << "class = \"fit-picture\"" << std::endl;
+				out << "src = \"" << tile.img_filename << "\"" << std::endl;
+				out << "alt = \"Errant standard cell\"" << std::endl;
+				// Defines image height/width on html
+				//out << "width = \"" << std::to_string(magnify * missed[j].html_img_width) << "\"" << std::endl;
+				//out << "height = \"" << std::to_string(magnify * missed[j].html_img_height) << "\"" << std::endl;
+				out << "/>" << std::endl;
+
+				// display coordinates for every cell in tile
+				for (Img_sub e_cell : img_tmp.sections[i].errant) {
+					if (e_cell.on_tile == tile.tile_id) {
+						std::string glob_heading = "Global Pixel Coordinates(x,y): " + std::to_string(e_cell.coords.x) + ", " + std::to_string(e_cell.coords.y);
+						std::string def_heading = "DEF Coordinates(x,y): " + std::to_string(e_cell.def_coords.x) + ", " + std::to_string(e_cell.def_coords.y);
+						out << "<h4>" << glob_heading << "</h4>" << std::endl;
+						out << "<h4>" << def_heading << "</h4>" << std::endl;
+					}
+				}
+
+				out << "<form action=\"#Table1\"> <input type=\"submit\" value=\"Back to Table\" /> </form>" << std::endl;
+			}
+			out << "</div>" << std::endl;
+		}
+		out << "</div>" << std::endl;
+
 	}
 	out << "</div>" << std::endl;
 
@@ -1060,7 +1018,7 @@ void write_toplines(std::ostream& out)
 	out << "<style>" << std::endl;
 
 	out << "div {" << std::endl;
-  out << "border: 5px solid #555;" << std::endl;
+	out << "border: 5px solid #555;" << std::endl;
 	out << "background-color: #eee;" << std::endl;
 	out << "padding: 0.5rem;" << std::endl;
 	out << "display: flex;" << std::endl;
@@ -1185,7 +1143,7 @@ void write_toplines(std::ostream& out)
 	out << "margin: 0.2rem;" << std::endl;
 	out << "}" << std::endl;
 
-  // Last lines of style area
+	// Last lines of style area
 	out << "</style>" << std::endl;
 	out << "</head>" << std::endl;
 	out << "<body>" << std::endl;
@@ -1196,6 +1154,3 @@ void write_ending(std::ostream& out)
 	out << "</body>" << std::endl;
 	out << "</html>" << std::endl;
 }
-
-
-
