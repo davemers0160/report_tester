@@ -204,6 +204,7 @@ int main(int argc, char** argv)
     //----------------------------------------------------------------------------
     // create the cell lists
     std::vector<Cell_info> cell_list;
+
     cell_list.push_back(Cell_info("cell_type_1", cell1_h, cell1_w, { 0,1,2,3 }, ct1_pts));
     cell_list.push_back(Cell_info("cell_type_2", cell2_h, cell2_w, { 0,1,2,3 }, ct2_pts));
 
@@ -275,12 +276,14 @@ int main(int argc, char** argv)
 
     //----------------------------------------------------------------------------
     // start here!!!!!!
-    std::vector<cv::Rect> report_grid;
-    std::vector<Tile_img> tile_grid;
+    //std::vector<cv::Rect> report_grid;
+    std::vector<Tile_img> report_grid;
     int32_t tile_w = 2000;
     int32_t tile_h = 2000;
     int32_t max_cell_width = 7 * min_cell_w;     // <-- this needs to be calculated based on the largest cell in cell_list
     int32_t max_cell_height = min_cell_h;     // <-- this needs to be calculated based on the largest cell in cell_list
+
+    calculate_cell_maximums(cell_list, max_cell_width, max_cell_height);
 
     // only need to call this once and feed to the Html_img report piece
     report_grid_generation(img_w, img_h, tile_w, tile_h, max_cell_width, max_cell_height, report_grid);
@@ -288,18 +291,18 @@ int main(int argc, char** argv)
     // temp code just to view the tile layout
     tmp_img = current_tile_image.clone();
 
-    for (idx = 0; idx < report_grid.size(); ++idx)
-    {
-        cv::rectangle(tmp_img, report_grid[idx], cv::Scalar(10*rng.uniform(12,26), 10 * rng.uniform(12, 26), 10 * rng.uniform(12, 26)), 4, 8);
-    }
+    //for (idx = 0; idx < report_grid.size(); ++idx)
+    //{
+    //    cv::rectangle(tmp_img, report_grid[idx], cv::Scalar(10*rng.uniform(12,26), 10 * rng.uniform(12, 26), 10 * rng.uniform(12, 26)), 4, 8);
+    //}
 
     // convert Rects to Tile_img to pass to Html_img
-    for (cv::Rect rect : report_grid) {
-        Tile_img tile(rect.x, rect.y, rect.height, rect.width);
-        tile.aligned = true;
-        tile.binarized = true;
-        tile_grid.push_back(tile);
-    }
+    //for (cv::Rect rect : report_grid) {
+    //    Tile_img tile(rect.x, rect.y, rect.height, rect.width);
+    //    tile.aligned = true;
+    //    tile.binarized = true;
+    //    tile_grid.push_back(tile);
+    //}
 
     // view the results of the random selection
     /*
@@ -320,7 +323,7 @@ int main(int argc, char** argv)
 
     //******************* IMAGE PART
     //Html_img img_whole(cell_list, detects, tiles, whole, current_tile_image, html_img_dir, templ_img_dir, def_conversion_info, matched_templates);
-    Html_img img_whole(cell_list, detects, tile_grid, whole, current_tile_image, html_img_dir, h_html_dir, h_templ_dir, def_conversion_info, matched_templates);
+    Html_img img_whole(cell_list, detects, report_grid, whole, current_tile_image, html_img_dir, h_html_dir, h_templ_dir, def_conversion_info, matched_templates);
     out_file << img_whole;;
     //**********************
 
