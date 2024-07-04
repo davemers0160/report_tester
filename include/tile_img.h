@@ -51,6 +51,8 @@ public:
 	Tile_img(std::string img_file, std::string txt_file);
 	Tile_img(const cv::Mat& current_tile_image, std::string img_file, int32_t core_box_dx, int32_t core_box_dy);
 	Tile_img(int32_t imgLocColX_, int32_t imgLocRowY_, int32_t h_, int32_t w_) : imgLocColX(imgLocColX_), imgLocRowY(imgLocRowY_), height(h_), width(w_) {};
+	Tile_img(int32_t imgLocColX_, int32_t imgLocRowY_, int32_t h_, int32_t w_, bool al_, bool bin_) : imgLocColX(imgLocColX_), imgLocRowY(imgLocRowY_), height(h_), width(w_), aligned(al_), binarized(bin_) {};
+
 	~Tile_img();
 	void read_txtdata(std::string txt_file);
 	void find_pixel_size(const cv::Mat& rotated_img, std::string file_name, int32_t core_box_dx, int32_t core_box_dy);
