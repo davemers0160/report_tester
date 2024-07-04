@@ -499,9 +499,9 @@ void update_cell_list(Tile_img tile, std::vector<Cell_info>& cell_list)
 bool is_still_on_tile(int32_t tilex, int32_t tiley, int32_t tile_width, int32_t tile_height, Pt_info ptloc)
 {
   bool is_on_tile = false;
-  if ((ptloc.pt.x > tilex) & (ptloc.pt.x < tilex + tile_width))
+  if ((ptloc.pt.x > tilex) && (ptloc.pt.x < tilex + tile_width))
   {
-    if ((ptloc.pt.y > tiley) & (ptloc.pt.y < tiley + tile_height))
+    if ((ptloc.pt.y > tiley) && (ptloc.pt.y < tiley + tile_height))
       is_on_tile = true;
   }
     
@@ -795,7 +795,7 @@ void find_pixel_vals_pwrgnd(const std::vector<Cell_info>& cell_list, std::vector
       for (Pt_info& ptloc : cell.pt_locations)
       {
         if (pins_defy[i] == ptloc.defpt.y) // find cells with the same def y location
-          if ((ptloc.pt.x > img_start) &(ptloc.pt.x < img_width))  
+          if ((ptloc.pt.x > img_start) && (ptloc.pt.x < img_width))  
           {
             pwr_sum = pwr_sum + ptloc.pt.y;
             pwr_pts.push_back(ptloc.pt.y);
@@ -992,16 +992,16 @@ void check_errant_detects_for_similar_cell(std::vector<Cell_info> cell_list, std
           for (int k = 0; k < cell_list.size(); k++)
           {
             
-            if ((cnum != k) & (cell_list[k].width_nm == cell_list[cnum].width_nm))
+            if ((cnum != k) && (cell_list[k].width_nm == cell_list[cnum].width_nm))
             {
               for (int j = 0; j < cell_list[k].pt_locations.size(); j++)
               {
                 
                 // Check if there is a cell located at the same location as detects[cnum][i] with distance of 10 pixels in x and in y
                 // TODO: remove hard coded 10 in favor of a dynamic value that tracks with image/cell size
-                if ((detects[cnum][i].pt.x > cell_list[k].pt_locations[j].pt.x - 10) & (detects[cnum][i].pt.x < cell_list[k].pt_locations[j].pt.x + 10))
+                if ((detects[cnum][i].pt.x > cell_list[k].pt_locations[j].pt.x - 10) && (detects[cnum][i].pt.x < cell_list[k].pt_locations[j].pt.x + 10))
                 {
-                  if ((detects[cnum][i].pt.y > cell_list[k].pt_locations[j].pt.y - 10) & (detects[cnum][i].pt.y < cell_list[k].pt_locations[j].pt.y + 10))
+                  if ((detects[cnum][i].pt.y > cell_list[k].pt_locations[j].pt.y - 10) && (detects[cnum][i].pt.y < cell_list[k].pt_locations[j].pt.y + 10))
                   {
                     if (cell_list[k].pt_locations[j].matched == 1)  
                     {
@@ -1097,7 +1097,7 @@ int find_closest_row_diff(cv::Point detect_pt, std::vector<int>& row_yvalues, st
     int minx = *resultn;
     std::vector<int>::iterator resultx = std::max_element(x_values[j].begin(), x_values[j].end());
     int maxx = *resultx;
-    if ((detect_pt.x <= maxx) &(detect_pt.x >= minx))
+    if ((detect_pt.x <= maxx) && (detect_pt.x >= minx))
     {
       if (abs(row_yvalues[j] - detect_pt.y) < diff_y)
       {
@@ -1135,12 +1135,12 @@ void check_cell_overlap(std::vector<Cell_info> cell_list, cv::Point detect_pt, u
   {
     for (int pidx = 0; pidx < cell_list[cidx].pt_locations.size(); pidx++)
     {
-      //if ((cnum != cidx) & (cell_list[cidx].pt_locations[pidx].matched == 1)) // Doesn't work for fill_16 cells
+      //if ((cnum != cidx) && (cell_list[cidx].pt_locations[pidx].matched == 1)) // Doesn't work for fill_16 cells
       if (cell_list[cidx].pt_locations[pidx].matched == 1)
       {
         int test_val = 10; // in pixels
-        if ((cell_list[cidx].pt_locations[pidx].pt.y >= detect_pt.y - test_val) & (cell_list[cidx].pt_locations[pidx].pt.y <= detect_pt.y + test_val))
-          if ((cell_list[cidx].pt_locations[pidx].pt.x >= detect_pt.x - max_cell_width) & (cell_list[cidx].pt_locations[pidx].pt.x <= detect_pt.x + max_cell_width))
+        if ((cell_list[cidx].pt_locations[pidx].pt.y >= detect_pt.y - test_val) && (cell_list[cidx].pt_locations[pidx].pt.y <= detect_pt.y + test_val))
+          if ((cell_list[cidx].pt_locations[pidx].pt.x >= detect_pt.x - max_cell_width) && (cell_list[cidx].pt_locations[pidx].pt.x <= detect_pt.x + max_cell_width))
           {
             Check_cell tmp;
             tmp.cell_width = cell_list[cidx].width;
@@ -1159,8 +1159,8 @@ void check_cell_overlap(std::vector<Cell_info> cell_list, cv::Point detect_pt, u
   {
     int min_x = test_cells[i].pt.x;
     int max_x = test_cells[i].pt.x + test_cells[i].cell_width;
-    if (((detect_pt.x >= min_x) & (detect_pt.x <= max_x)) |
-      ((detect_pt.x + detect_width >= min_x) & (detect_pt.x + detect_width <= max_x)))
+    if (((detect_pt.x >= min_x) && (detect_pt.x <= max_x)) ||
+      ((detect_pt.x + detect_width >= min_x) && (detect_pt.x + detect_width <= max_x)))
     {
         remove = true;
         break;
@@ -1256,7 +1256,7 @@ void find_one_matched_template(std::vector<Tile_img>& tiles, matched_template &m
     for (int jdx = 0; jdx < num_tiles; ++jdx)
     {
       // get the number of cells for each tile
-      if (tiles[jdx].aligned & tiles[jdx].binarized)
+      if (tiles[jdx].aligned && tiles[jdx].binarized)
         count[jdx] = tiles[jdx].tile_cells[celltype_idx].pt_locations.size();
       else
         count[jdx] = 0;
@@ -1326,7 +1326,7 @@ void setup_cell_list(std::set<std::string> uniq_cellnames, std::vector<Cell_info
   cell_list.clear();
   for (std::string cellname: uniq_cellnames)
   {
-    if (!nonf_cells.empty() & (std::find(nonf_cells.begin(), nonf_cells.end(), cellname) != nonf_cells.end()))
+    if (!nonf_cells.empty() && (std::find(nonf_cells.begin(), nonf_cells.end(), cellname) != nonf_cells.end()))
       continue;
     else
     {

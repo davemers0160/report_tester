@@ -21,10 +21,10 @@ class Tile_img
 {
 public:
 	// Attributes
-	std::string image_file{""};
-	std::string txt_file{""};
-	int32_t height=0; // Height of image in pixels
-	int32_t width=0; // Width of image in pixels
+	std::string image_file{ "" };
+	std::string txt_file{ "" };
+	int32_t height = 0; // Height of image in pixels
+	int32_t width = 0; // Width of image in pixels
 	double pixel_size_x = 1.0; // from PixelSize nm/pixel in.txt (resolution)
 	double pixel_size_y = 1.0;
 	int32_t initLocColX = 0; // X initial location in pixels in stitched image
@@ -36,8 +36,8 @@ public:
 	bool binarized = false;
 	uint8_t struct_elem_size = 5;
 	uint16_t binary_threshold = 164;
-	std::vector<cv::Point> a_matrix; 
-	std::vector<cv::Point> b_matrix; 
+	std::vector<cv::Point> a_matrix;
+	std::vector<cv::Point> b_matrix;
 	std::vector<Cell_info> corner_pts;
 	std::vector<Cell_info> orig_corner_pts;
 	std::vector<double> gnd_pixels_y;
@@ -45,15 +45,17 @@ public:
 	bool scored = false;
 	std::vector<cv::Scalar> used_colors;
 
+	std::string img_filename = "";
+
 	//Methods/Functions
-	Tile_img(std::string img_file, std::string txt_file); 
-	Tile_img(const cv::Mat &current_tile_image, std::string img_file, int32_t core_box_dx, int32_t core_box_dy);
-	Tile_img(int32_t imgLocColX_, int32_t imgLocRowY_, int32_t h_, int32_t w_) : imgLocColX(imgLocColX_), imgLocRowY(imgLocRowY_), height(h_), width(w_){};
+	Tile_img(std::string img_file, std::string txt_file);
+	Tile_img(const cv::Mat& current_tile_image, std::string img_file, int32_t core_box_dx, int32_t core_box_dy);
+	Tile_img(int32_t imgLocColX_, int32_t imgLocRowY_, int32_t h_, int32_t w_) : imgLocColX(imgLocColX_), imgLocRowY(imgLocRowY_), height(h_), width(w_) {};
 	~Tile_img();
 	void read_txtdata(std::string txt_file);
-	void find_pixel_size(const cv::Mat &rotated_img, std::string file_name, int32_t core_box_dx, int32_t core_box_dy);
+	void find_pixel_size(const cv::Mat& rotated_img, std::string file_name, int32_t core_box_dx, int32_t core_box_dy);
 	void find_ImgLoc(Tile_img& tile0);
-	void get_tile_cells(const std::vector<Cell_info> &def_cells);
-	void plot_DEFpts(const std::vector<Cell_info> &def_cells);
+	void get_tile_cells(const std::vector<Cell_info>& def_cells);
+	void plot_DEFpts(const std::vector<Cell_info>& def_cells);
 	cv::Scalar get_color(std::string cellname);
 };
