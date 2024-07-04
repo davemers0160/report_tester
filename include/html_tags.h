@@ -915,26 +915,52 @@ void write_template_table(std::ostream& out, std::string templ_filename)
 }
 
 void write_coordinates_table(std::ostream& out, std::vector<Img_sub> cell_list, int check_tile) {
-	// coordinates table header
-	out << "<table style=\"line-height:50%\">" << std::endl;
+
+	uint8_t cols = 4;
+	uint8_t index = 0;
+
+	// coordinates table header -  four column pairs
+	out << "<table style=\"line-height:100%\">" << std::endl;
 	out << "<tr>" << std::endl;
-	out << "<th>Global Pixel Coordinates(x,y)</th>" << std::endl;
-	out << "<th>DEF Coordinates(x,y)</th>" << std::endl;
+	for(uint8_t idx=0; idx<cols; ++idx)
+	{
+		out << "<th><center>Global Pixel<br>Coordinates (x,y)</center></th>" << std::endl;
+		out << "<th><center>DEF<br>Coordinates (x,y)</center></th>" << std::endl;
+	}
 	out << "</tr>" << std::endl;
 
 	// display coordinates for every cell in tile
-	for (Img_sub cell : cell_list) {
-		if (cell.on_tile == check_tile) {
-			out << "<tr>" << std::endl;
+	for (Img_sub cell : cell_list) 
+	{
+		if (cell.on_tile == check_tile) 
+		{
+			// write the start of the table row
+			if (index == 0)
+				out << "<tr>" << std::endl;
+
 			std::string glob_coords = std::to_string(cell.coords.x) + ", " + std::to_string(cell.coords.y);
 			std::string def_coords = std::to_string(cell.def_coords.x) + ", " + std::to_string(cell.def_coords.y);
 			out << "<td>" << glob_coords << "</td>" << std::endl;
 			out << "<td>" << def_coords << "</td>" << std::endl;
-			out << "</tr>" << std::endl;
+
+			// write the end of the table row
+			if (index == (cols - 1))
+			{
+				out << "</tr>" << std::endl;
+				index = 0;
+			}
+			else
+				++index;
 		}
 	}
+
+	// write out a <tr> incase we don't get to an even number of 4 columns
+	if (index > 0)
+		out << "</tr>" << std::endl;
+
 	out << "</table>" << std::endl;
-}
+
+}	// end of write_coordinates_table
 
 void write_section(std::ostream& out, std::vector<Img_sub> cell_list, std::string label, std::vector<Tile_path> paths) {
 	if (!cell_list.empty())
