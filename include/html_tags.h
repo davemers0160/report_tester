@@ -546,8 +546,7 @@ public:
 // Constructor:  added image zoom information to create image
 // Used missed and errant to setup separate sections
 // Note: Type:  m for missed, e for errant
-Img_sub::Img_sub(Pt_info ptloc, std::string type, uint32_t on_tile)
-	: type(type), on_tile(on_tile)
+Img_sub::Img_sub(Pt_info ptloc, std::string type, uint32_t on_tile) : type(type), on_tile(on_tile)
 {
 	coords = ptloc.pt;
 	def_coords = ptloc.defpt;
